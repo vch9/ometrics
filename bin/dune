@@ -1,0 +1,4 @@
+(executable
+ (public_name ometrics)
+ (name main)
+ (libraries merlin.kernel))

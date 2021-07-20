@@ -1,0 +1,9 @@
+opam-version: "2.0"
+version: "dev"
+maintainer: "Thomas Letan <lthms@nomadic-labs.com>"
+depends: [
+  "ocaml" {>= "4.12" & < "4.13"}
+]
+authors: [
+  "Thomas Letan <lthms@nomadic-labs.com>"
+]
