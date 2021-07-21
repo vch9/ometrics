@@ -20,7 +20,8 @@ let pp_entry fmt { entry_kind; entry_name; entry_documented } =
     | Value -> pp_print_string fmt "Value"
   in
 
-  Format.fprintf fmt "@[<h>%a: %s %a@]" pp_kind entry_kind entry_name
+  Format.fprintf fmt "@[<h>%a: %s%s%a@]" pp_kind entry_kind entry_name
+    (if entry_documented then " " else "")
     pp_print_mark entry_documented
 
 let fully_qualified_name ns ident =
