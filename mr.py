@@ -45,13 +45,14 @@ for file in modified_files:
         print_filename = True
 
         undocumented_entries_number = len(undocumented_entries_after)
+        undocumented_entries_number_before = len(undocumented_entries_before)
 
         while ia < undocumented_entries_number:
-            if undocumented_entries_after[ia] == undocumented_entries_before[ib]:
+            if ib < undocumented_entries_number_before and undocumented_entries_after[ia] == undocumented_entries_before[ib]:
                 ia += 1
                 ib += 1
                 continue
-            elif undocumented_entries_after[ia] < undocumented_entries_before[ib]:
+            elif undocumented_entries_number_before <= ib or undocumented_entries_after[ia] < undocumented_entries_before[ib]:
                 if print_filename:
                     print(f"# `{file}`")
                     print_filename = False
