@@ -1,5 +1,10 @@
 # `ometrics`
 
+```bash
+git submodule update --init
+opam switch create . ocaml-base-compiler.4.12.0
+```
+
 ## `mr.py`
 
 Find the list of OCaml entries which have not been properly

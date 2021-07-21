@@ -3,6 +3,14 @@ version: "dev"
 maintainer: "Thomas Letan <lthms@nomadic-labs.com>"
 depends: [
   "ocaml" {>= "4.12" & < "4.13"}
+  "yojson"
+  "menhirSdk"
+  "menhirLib"
+  "csexp"
+  "result"
+]
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 authors: [
   "Thomas Letan <lthms@nomadic-labs.com>"
