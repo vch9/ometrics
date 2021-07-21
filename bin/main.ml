@@ -6,7 +6,7 @@ let pp_print_mark fmt = function
   | true -> Format.pp_print_string fmt "✓"
   | false -> ()
 
-type kind = ModuleType | Module | Type | Value
+type kind = ModuleType | Module | Functor | Type | Value
 
 type entry = { entry_kind : kind; entry_name : string; entry_documented : bool }
 
@@ -14,6 +14,7 @@ let pp_entry fmt { entry_kind; entry_name; entry_documented } =
   let open Format in
   let pp_kind fmt = function
     | ModuleType -> pp_print_string fmt "ModuleType"
+    | Functor -> pp_print_string fmt "Functor"
     | Module -> pp_print_string fmt "Module"
     | Type -> pp_print_string fmt "Type"
     | Value -> pp_print_string fmt "Value"
@@ -102,16 +103,22 @@ let rec inspect_module_binding ns comments binding =
   Option.fold binding.mb_id ~none:[] ~some:(fun ident ->
       {
         entry_name = fully_qualified_name ns ident;
-        entry_kind = Module;
+        entry_kind =
+          (match binding.mb_expr.mod_desc with
+          | Tmod_functor (_, _) -> Functor
+          | _ -> Module);
         entry_documented = is_documented comments binding.mb_loc;
       }
-      ::
-      (match binding.mb_expr.mod_desc with
-      | Tmod_structure structure ->
-          List.concat_map
-            (inspect_struct_item (Ident.name ident :: ns) comments)
-            structure.str_items
-      | _ -> []))
+      :: inspect_module_expr ns comments ident binding.mb_expr)
+
+and inspect_module_expr ns comments ident expr =
+  match expr.mod_desc with
+  | Tmod_structure structure ->
+      List.concat_map
+        (inspect_struct_item (Ident.name ident :: ns) comments)
+        structure.str_items
+  | Tmod_functor (_, expr) -> inspect_module_expr ns comments ident expr
+  | _ -> []
 
 and inspect_struct_item ns comments str_item : entry list =
   match str_item.str_desc with
@@ -147,16 +154,19 @@ let inspect_sig_type ns comments ident decl =
 let rec inspect_sig_module ns comments ident decl =
   {
     entry_name = fully_qualified_name ns ident;
-    entry_kind = Module;
+    entry_kind =
+      (match decl.md_type with Mty_functor (_, _) -> Functor | _ -> Module);
     entry_documented = is_documented comments decl.md_loc;
   }
-  ::
-  (match decl.md_type with
+  :: inspect_module_type ns comments ident decl.md_type
+
+and inspect_module_type ns comments ident = function
   | Mty_signature signature ->
       List.concat_map
         (inspect_sig_item (Ident.name ident :: ns) comments)
         signature
-  | _ -> [])
+  | Mty_functor (_, mtyp) -> inspect_module_type ns comments ident mtyp
+  | _ -> []
 
 and inspect_sig_item ns comments : Types.signature_item -> entry list = function
   | Sig_value (ident, descr, Exported) ->
