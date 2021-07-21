@@ -6,13 +6,7 @@ let pp_print_mark fmt = function
   | true -> Format.pp_print_string fmt "✓"
   | false -> ()
 
-type kind =
-  | ModuleType
-  | Module
-  | Type
-  | Constructor of string
-  | Field of string
-  | Value
+type kind = ModuleType | Module | Type | Value
 
 type entry = { entry_kind : kind; entry_name : string; entry_documented : bool }
 
@@ -22,8 +16,6 @@ let pp_entry fmt { entry_kind; entry_name; entry_documented } =
     | ModuleType -> pp_print_string fmt "MT"
     | Module -> pp_print_string fmt "M"
     | Type -> pp_print_string fmt "T"
-    | Constructor adt -> fprintf fmt "C(%s)" adt
-    | Field structure -> fprintf fmt "F(%s)" structure
     | Value -> pp_print_string fmt "Value"
   in
 
