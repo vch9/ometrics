@@ -22,6 +22,9 @@ let pp_entry fmt { entry_kind; entry_name; entry_documented } =
   Format.fprintf fmt "@[<h>%a: %s %a@]" pp_kind entry_kind entry_name
     pp_print_mark entry_documented
 
+let fully_qualified_name ns ident =
+  String.concat "." @@ List.rev (Ident.name ident :: ns)
+
 let make_config path =
   let mconfig = Mconfig.initial in
   let path = Merlin_utils.Misc.canonicalize_filename path in
@@ -73,34 +76,64 @@ let rec pattern_idents : type k. k general_pattern -> string list =
       List.append (pattern_idents pat1) (pattern_idents pat2)
   | _ -> []
 
+(* --------------------------------------------------------------------------- *)
+
+let inspect_value_binding ns comments binding =
+  let entry_documented = is_documented comments binding.vb_loc in
+  List.map
+    (fun ident ->
+      {
+        entry_name = String.concat "." @@ List.rev (ident :: ns);
+        entry_kind = Value;
+        entry_documented;
+      })
+    (pattern_idents binding.vb_pat)
+
+let inspect_type_declaration ns comments decl =
+  [
+    {
+      entry_name = fully_qualified_name ns decl.typ_id;
+      entry_kind = Type;
+      entry_documented = is_documented comments decl.typ_loc;
+    };
+  ]
+
 let inspect_struct_item ns comments str_item : entry list =
   match str_item.str_desc with
   | Tstr_value (_, bindings) ->
-      List.concat_map
-        (fun binding ->
-          let entry_documented = is_documented comments binding.vb_loc in
-          List.map
-            (fun ident ->
-              {
-                entry_name = String.concat "." @@ List.rev (ident :: ns);
-                entry_kind = Value;
-                entry_documented;
-              })
-            (pattern_idents binding.vb_pat))
-        bindings
+      List.concat_map (inspect_value_binding ns comments) bindings
+  | Tstr_type (_, decls) ->
+      List.concat_map (inspect_type_declaration ns comments) decls
   | _ -> []
+
+(* --------------------------------------------------------------------------- *)
+
+let inspect_sig_value ns comments ident descr =
+  [
+    {
+      entry_name = fully_qualified_name ns ident;
+      entry_kind = Value;
+      entry_documented = is_documented comments descr.val_loc;
+    };
+  ]
+
+let inspect_sig_type ns comments ident decl =
+  [
+    {
+      entry_name = fully_qualified_name ns ident;
+      entry_kind = Type;
+      entry_documented = is_documented comments decl.type_loc;
+    };
+  ]
 
 let inspect_sig_item ns comments : Types.signature_item -> entry list = function
   | Sig_value (ident, descr, Exported) ->
-      [
-        {
-          entry_name = String.concat "." @@ List.rev (Ident.name ident :: ns);
-          entry_kind = Value;
-          entry_documented = is_documented comments descr.val_loc;
-        };
-      ]
-  | Sig_value (_, _, Hidden) -> []
+      inspect_sig_value ns comments ident descr
+  | Sig_type (ident, decl, _, Exported) ->
+      inspect_sig_type ns comments ident decl
   | _ -> []
+
+(* --------------------------------------------------------------------------- *)
 
 let inspect_typedtree ns comments = function
   | `Implementation s ->
