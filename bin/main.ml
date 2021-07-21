@@ -13,9 +13,9 @@ type entry = { entry_kind : kind; entry_name : string; entry_documented : bool }
 let pp_entry fmt { entry_kind; entry_name; entry_documented } =
   let open Format in
   let pp_kind fmt = function
-    | ModuleType -> pp_print_string fmt "MT"
-    | Module -> pp_print_string fmt "M"
-    | Type -> pp_print_string fmt "T"
+    | ModuleType -> pp_print_string fmt "ModuleType"
+    | Module -> pp_print_string fmt "Module"
+    | Type -> pp_print_string fmt "Type"
     | Value -> pp_print_string fmt "Value"
   in
 
