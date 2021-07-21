@@ -57,7 +57,6 @@ let merlin_source target =
   close_in file_channel;
   Msource.make file_content
 
-(** Tada *)
 let is_documented comments loc =
   Ocamldoc.associate_comment comments loc Location.none |> fst |> Option.is_some
 
