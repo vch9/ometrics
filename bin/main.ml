@@ -98,12 +98,28 @@ let inspect_type_declaration ns comments decl =
     };
   ]
 
-let inspect_struct_item ns comments str_item : entry list =
+let rec inspect_module_binding ns comments binding =
+  Option.fold binding.mb_id ~none:[] ~some:(fun ident ->
+      {
+        entry_name = fully_qualified_name ns ident;
+        entry_kind = Module;
+        entry_documented = is_documented comments binding.mb_loc;
+      }
+      ::
+      (match binding.mb_expr.mod_desc with
+      | Tmod_structure structure ->
+          List.concat_map
+            (inspect_struct_item (Ident.name ident :: ns) comments)
+            structure.str_items
+      | _ -> []))
+
+and inspect_struct_item ns comments str_item : entry list =
   match str_item.str_desc with
   | Tstr_value (_, bindings) ->
       List.concat_map (inspect_value_binding ns comments) bindings
   | Tstr_type (_, decls) ->
       List.concat_map (inspect_type_declaration ns comments) decls
+  | Tstr_module binding -> inspect_module_binding ns comments binding
   | _ -> []
 
 (* --------------------------------------------------------------------------- *)
@@ -126,11 +142,27 @@ let inspect_sig_type ns comments ident decl =
     };
   ]
 
-let inspect_sig_item ns comments : Types.signature_item -> entry list = function
+let rec inspect_sig_module ns comments ident decl =
+  {
+    entry_name = fully_qualified_name ns ident;
+    entry_kind = Module;
+    entry_documented = is_documented comments decl.md_loc;
+  }
+  ::
+  (match decl.md_type with
+  | Mty_signature signature ->
+      List.concat_map
+        (inspect_sig_item (Ident.name ident :: ns) comments)
+        signature
+  | _ -> [])
+
+and inspect_sig_item ns comments : Types.signature_item -> entry list = function
   | Sig_value (ident, descr, Exported) ->
       inspect_sig_value ns comments ident descr
   | Sig_type (ident, decl, _, Exported) ->
       inspect_sig_type ns comments ident decl
+  | Sig_module (ident, _, decl, _, Exported) ->
+      inspect_sig_module ns comments ident decl
   | _ -> []
 
 (* --------------------------------------------------------------------------- *)
