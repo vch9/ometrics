@@ -120,6 +120,8 @@ and inspect_struct_item ns comments str_item : entry list =
   | Tstr_type (_, decls) ->
       List.concat_map (inspect_type_declaration ns comments) decls
   | Tstr_module binding -> inspect_module_binding ns comments binding
+  | Tstr_recmodule bindings ->
+      List.concat_map (inspect_module_binding ns comments) bindings
   | _ -> []
 
 (* --------------------------------------------------------------------------- *)
