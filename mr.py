@@ -1,13 +1,16 @@
 #!/bin/env python3
 
 # usage:
-#   mr.py LAST_MERGE_COMMIT
+#   mr.py
 
 import subprocess
-import sys
 import os
 
-before = sys.argv[1]
+before = subprocess.Popen(
+    "git --no-pager log --merges -n1 --pretty=format:%H",
+    shell=True,
+    stdout=subprocess.PIPE
+).stdout.read().decode("utf-8")
 
 ometrics = "./main.exe"
 
@@ -35,7 +38,7 @@ for file in modified_files:
 subprocess.call(f"git checkout -q {before}", shell=True)
 
 for file in modified_files:
-    if os.path.isfile(file):
+    if os.path.isfile(file) and not file[:-1] in ml_files:
         undocumented_entries_after = ml_files[file]
         undocumented_entries_before = read_undocumented_entries(file)
         ib, ia = 0, 0
@@ -61,8 +64,9 @@ for file in modified_files:
                 continue
 
     else:
-        print(f"# `{file}`")
-        for e in ml_files[file]:
-            print(f"- `{e}`")
+        if not file[:-1] in ml_files:
+            print(f"# `{file}`")
+            for e in ml_files[file]:
+                print(f"- `{e}`")
 
 subprocess.call("git checkout -q -", shell=True)
