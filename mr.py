@@ -21,14 +21,16 @@ def read_undocumented_entries(file):
     ).stdout.read().decode("utf-8").splitlines()
 
 modified_files = subprocess.Popen(
-    f"git diff {before} --name-only | egrep '*.ml$'",
+    f"git diff {before} --name-only | egrep '*.mli?$'",
     shell=True,
     stdout=subprocess.PIPE
 ).stdout.read().decode("utf-8").splitlines()
 
 for file in modified_files:
     if os.path.isfile(file):
-        ml_files[file] = read_undocumented_entries(file)
+        # For a mli, the ml file may have been treated already
+        if not file[:-1] in ml_files:
+            ml_files[file] = read_undocumented_entries(file)
 
 subprocess.call(f"git checkout -q {before}", shell=True)
 
