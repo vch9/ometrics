@@ -48,10 +48,10 @@ for file in modified_files:
                 continue
             elif undocumented_entries_after[ia] < undocumented_entries_before[ib]:
                 if print_filename:
-                    print(f"# {file}")
+                    print(f"# `{file}`")
                     print_filename = False
 
-                print(undocumented_entries_after[ia])
+                print(f"- `{undocumented_entries_after[ia]}`")
                 ia += 1
                 continue
             else:
@@ -59,8 +59,8 @@ for file in modified_files:
                 continue
 
     else:
-        print(f"# {file}")
+        print(f"# `{file}`")
         for e in ml_files[file]:
-            print(e)
+            print(f"- `{e}`")
 
 subprocess.call("git checkout -q -", shell=True)
