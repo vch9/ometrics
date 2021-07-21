@@ -113,6 +113,13 @@ let choose_file target =
   let mli_target = target ^ "i" in
   if Sys.file_exists mli_target then mli_target else target
 
+let toplevel_entry comments name =
+  {
+    entry_kind = Module;
+    entry_name = name;
+    entry_documented = is_documented comments Location.none;
+  }
+
 let _ =
   let target = choose_file Sys.argv.(1) in
 
@@ -128,7 +135,8 @@ let _ =
         let typing = Mpipeline.typer_result pipeline in
         let typedtree = Mtyper.get_typedtree typing in
         let comments = Mpipeline.reader_comments pipeline in
-        inspect_typedtree [ unit ] comments typedtree)
+        toplevel_entry comments unit
+        :: inspect_typedtree [ unit ] comments typedtree)
   in
 
   Format.(
