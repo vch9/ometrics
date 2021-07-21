@@ -7,7 +7,10 @@ let choose_file target =
 let _ =
   let target = choose_file Sys.argv.(1) in
 
-  let deps = Toplevel.to_entries target in
+  let deps =
+    Toplevel.to_entries target |> List.sort compare
+    |> List.filter Entry.is_not_documented
+  in
 
   Format.(
     printf "@[<v>%a@]" (pp_print_list ~pp_sep:pp_print_space Entry.pp) deps)
