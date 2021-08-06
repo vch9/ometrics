@@ -1,0 +1,3 @@
+(library
+ (name ometrics)
+ (libraries unix str merlin.kernel merlin.analysis))
