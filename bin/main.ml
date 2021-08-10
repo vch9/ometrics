@@ -1,5 +1,6 @@
 open Ometrics
 open Ometrics.Git
+open Ometrics.Change
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
     "target.ml" otherwise. *)
@@ -44,9 +45,9 @@ let check_mr path =
 
   let h = Git.find_last_merge_commit r in
 
-  let changes = Git.get_changes r ~since:h |> List.filter Git.is_ml_change in
+  let changes = Git.get_changes r ~since:h |> List.filter is_ml_change in
 
-  let before, after = Git.files_to_analyze changes in
+  let before, after = Change.files_to_analyze changes in
 
   let before =
     Git.with_tmp_clone r ~hash:h (fun _r ->

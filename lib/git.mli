@@ -1,3 +1,5 @@
+open Change
+
 type hash
 
 val hash_from_string : string -> hash
@@ -34,18 +36,6 @@ val get_commits_after : repository -> hash -> hash list
 (** [get_commits_after r h] returns the list of hashes of commits that have been
     applied of top of [h] up until the head of [r]. *)
 
-type change =
-  | Addition of string
-  | Deletion of string
-  | Edition of string
-  | Renaming of string * string
-
-val is_ml_change : change -> bool
-
-type changes = change list
-
 val changes_of : repository -> hash -> changes
 
 val get_changes : repository -> since:hash -> changes
-
-val files_to_analyze : changes -> string list * string list
