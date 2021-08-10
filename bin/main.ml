@@ -1,5 +1,4 @@
 open Ometrics
-open Ometrics.Git
 open Ometrics.Change
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
@@ -43,7 +42,10 @@ let conciliate_undocumented_all before after chs =
 let check_mr path =
   let r = Git.open_repository ~path () in
 
-  let h = Git.find_last_merge_commit r in
+  let h =
+    try Git.hash_from_string Sys.argv.(2)
+    with _ -> Git.find_last_merge_commit r
+  in
 
   let changes = Git.get_changes r ~since:h |> List.filter is_ml_change in
 
