@@ -8,6 +8,7 @@ depends: [
   "menhirLib"
   "csexp"
   "result"
+  "cmdliner"
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
