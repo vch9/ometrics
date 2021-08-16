@@ -1,5 +1,6 @@
 open Ometrics
 open Ometrics.Change
+open Cmdliner
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
     "target.ml" otherwise. *)
@@ -39,12 +40,13 @@ let conciliate_undocumented_all before after chs =
   List.map (conciliate_undocumented before after) chs
   |> filter_duplicate_undocumented
 
-let check_mr path =
+let check_mr path hash =
   let r = Git.open_repository ~path () in
 
   let h =
-    try Git.hash_from_string Sys.argv.(2)
-    with _ -> Git.find_last_merge_commit r
+    match hash with
+    | "" -> Git.find_last_merge_commit r
+    | s -> Git.hash_from_string s
   in
 
   let changes = Git.get_changes r ~since:h |> List.filter is_ml_change in
@@ -76,4 +78,34 @@ let check_mr path =
             deps)))
     todo
 
-let _ = check_mr @@ try Sys.argv.(1) with _ -> "."
+let check path commit = Ok (check_mr path commit)
+
+let name = "ometrics"
+
+let version = "dev"
+
+let check =
+  let doc =
+    "Check undocument function between current head and last merge commit."
+  in
+  let exits = Term.default_exits in
+
+  let path =
+    let doc = "Git project path." in
+    Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
+  in
+
+  let commit =
+    let doc = "Base commit to check." in
+    Arg.(value & opt string "" & info [ "h"; "hash" ] ~doc ~docv:"COMMIT")
+  in
+  ( Term.(term_result (const check $ path $ commit)),
+    Term.info "check" ~version ~doc ~exits )
+
+let default =
+  let exits = Term.default_exits in
+  (Term.(ret (const (`Help (`Pager, None)))), Term.info name ~version ~exits)
+
+let cmds = [ check ]
+
+let () = Term.(exit @@ eval_choice default cmds)
