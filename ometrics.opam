@@ -9,6 +9,7 @@ depends: [
   "csexp"
   "result"
   "cmdliner"
+  "qcheck-alcotest" {with-test & >= "0.18"}
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
