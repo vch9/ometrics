@@ -4,6 +4,10 @@ type t =
   | Edition of string
   | Renaming of string * string
 
+val pp : Format.formatter -> t -> unit
+
+val eq : t -> t -> bool
+
 type change = t
 
 type changes = change list
