@@ -4,6 +4,20 @@ type t =
   | Edition of string
   | Renaming of string * string
 
+let pp fmt = function
+  | Addition s -> Format.fprintf fmt "Addition %s" s
+  | Deletion s -> Format.fprintf fmt "Deletion %s" s
+  | Edition s -> Format.fprintf fmt "Edition %s" s
+  | Renaming (s, s') -> Format.fprintf fmt "Renaming %s -> %s" s s'
+
+let eq x y =
+  match (x, y) with
+  | Addition s, Addition s' -> s = s'
+  | Deletion s, Deletion s' -> s = s'
+  | Edition s, Edition s' -> s = s'
+  | Renaming (s1, s1'), Renaming (s2, s2') -> s1 = s2 && s1' = s2'
+  | _ -> false
+
 type change = t
 
 type changes = change list
@@ -25,6 +39,12 @@ let is_ml_change : change -> bool =
   | Addition path | Edition path -> is_ml_file path
   | Renaming (before, after) -> is_ml_file before && is_ml_file after
   | _ -> false
+
+module Changes = Set.Make (struct
+  type t = change
+
+  let compare = compare
+end)
 
 let rec add_deletion path = function
   | (Addition path' | Renaming (_, path') | Edition path') :: rst
@@ -54,7 +74,8 @@ let add_change l = function
   | Renaming (before, after) -> add_renaming before after l
   | ch -> ch :: l
 
-let merge_changes = List.fold_left add_change
+let merge_changes prev next =
+  List.fold_left add_change prev next |> Changes.of_list |> Changes.elements
 
 let files_to_analyze =
   let rec aux accb acca = function
@@ -100,4 +121,4 @@ let change_from_string str =
           | None -> (
               match renaming_from_string str with
               | Some c -> c
-              | None -> assert false)))
+              | None -> raise (Invalid_argument str))))
