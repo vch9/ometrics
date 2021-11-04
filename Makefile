@@ -8,3 +8,12 @@ test:
 
 clean:
 	@dune clean
+	rm -rf _coverage
+
+coverage-summary:
+	@dune runtest -f --instrument-with bisect_ppx
+	@bisect-ppx-report summary
+
+coverage-html:
+	@dune runtest -f --instrument-with bisect_ppx test/
+	@bisect-ppx-report html
