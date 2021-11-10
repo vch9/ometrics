@@ -40,12 +40,6 @@ let is_ml_change : change -> bool =
   | Renaming (before, after) -> is_ml_file before && is_ml_file after
   | _ -> false
 
-module Changes = Set.Make (struct
-  type t = change
-
-  let compare = compare
-end)
-
 let rec add_deletion path = function
   | (Addition path' | Renaming (_, path') | Edition path') :: rst
     when path = path' ->
@@ -74,8 +68,12 @@ let add_change l = function
   | Renaming (before, after) -> add_renaming before after l
   | ch -> ch :: l
 
-let merge_changes prev next =
-  List.fold_left add_change prev next |> Changes.of_list |> Changes.elements
+(** [uniqueness l] removes duplicates from [l]. *)
+let rec uniqueness = function
+  | x :: xs -> if List.mem x xs then uniqueness xs else x :: uniqueness xs
+  | [] -> []
+
+let merge_changes prev next = List.fold_left add_change prev next |> uniqueness
 
 let files_to_analyze =
   let rec aux accb acca = function
