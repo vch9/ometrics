@@ -41,9 +41,13 @@ let conciliate_undocumented_all before after chs =
   List.map (conciliate_undocumented before after) chs
   |> filter_duplicate_undocumented
 
-let check_mr path hash =
-  let r = Git.open_repository ~path () in
+(** {2. Check } *)
 
+let get_repo = function
+  | `Git (git, branch) -> Git.clone_repository ?branch git
+  | `Path path -> Git.open_repository ~path ()
+
+let check_mr r hash =
   let h =
     match hash with
     | "" -> Git.find_last_merge_commit r |> Option.get
@@ -80,4 +84,11 @@ let check_mr path hash =
             deps)))
     todo
 
-let check path commit = Ok (check_mr path commit)
+let check_clone git branch commit =
+  let branch = match branch with "" -> None | x -> Some x in
+  let repo = get_repo @@ `Git (git, branch) in
+  Ok (check_mr repo commit)
+
+let check path commit =
+  let repo = get_repo @@ `Path path in
+  Ok (check_mr repo commit)

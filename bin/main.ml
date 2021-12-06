@@ -28,8 +28,12 @@ module Check = struct
       let doc = "Git project." in
       Arg.(required & pos 0 (some string) None & info [] ~doc ~docv:"GIT")
     in
-    ( Term.(term_result (const check $ git $ commit)),
-      Term.info "check" ~version ~doc ~exits )
+    let branch =
+      let doc = "Git project branch." in
+      Arg.(value & opt string "" & info [ "b"; "branch" ] ~doc ~docv:"BRANCH")
+    in
+    ( Term.(term_result (const check_clone $ git $ branch $ commit)),
+      Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
 end
