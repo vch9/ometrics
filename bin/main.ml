@@ -48,7 +48,8 @@ let check_mr path hash =
 
   let h =
     match hash with
-    | "" -> Git.find_last_merge_commit r
+    | "" -> Git.find_last_merge_commit r |> Option.get
+    (* todo: gracefully handle None *)
     | s -> Git.hash_from_string s
   in
 

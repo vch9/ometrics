@@ -2,6 +2,14 @@ open Change
 
 (** {2. Utilities} *)
 
+(** {3. Option Monad} *)
+
+(* let map a f = Option.map f a
+ *
+ * let ( >>? ) = map *)
+
+let ( >>= ) = Option.bind
+
 exception BadStatus of string
 
 let rec read_lines ch =
@@ -37,6 +45,9 @@ let run_lines : string -> string list =
 
 let run_string : string -> string =
  fun cmd -> run_lines cmd |> String.concat "\n"
+
+let run_string_opt : string -> string option =
+ fun cmd -> try Some (run_string cmd) with BadStatus _ -> None
 
 let rmrf path = run Format.(sprintf "rm -rf %s" path)
 
@@ -93,12 +104,13 @@ let clone_repository : ?branch:string -> string -> repository =
       let () = clone ?branch git in
       open_repository ())
 
-let find_last_merge_commit : repository -> hash =
+let find_last_merge_commit : repository -> hash option =
  fun (Repo r) ->
-  Hash
-    (run_string
-       Format.(
-         sprintf "git -C %s --no-pager log --merges -n1 --pretty=format:%%H" r))
+  let cmd =
+    Format.(
+      sprintf "git -C %s --no-pager log --merges -n1 --pretty=format:%%H" r)
+  in
+  run_string_opt cmd >>= function "" -> None | h -> Some (Hash h)
 
 let get_commits_after : repository -> hash -> hash list =
  fun (Repo r) (Hash h) ->

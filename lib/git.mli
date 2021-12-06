@@ -35,10 +35,8 @@ val with_tmp_clone : repository -> ?hash:hash -> (repository -> 'a) -> 'a
     The temporary clone is deleted once the continuation
     terminates. *)
 
-val find_last_merge_commit : repository -> hash
-(** [find_last_merge_commit r] returns the most recent merge commit
-
-     TODO: failure case *)
+val find_last_merge_commit : repository -> hash option
+(** [find_last_merge_commit r] tries to find the most recent merge commit. *)
 
 val get_commits_after : repository -> hash -> hash list
 (** [get_commits_after r h] returns the list of hashes of commits that have been
