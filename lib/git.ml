@@ -1,13 +1,8 @@
 open Change
 
-let ignore _ = ()
+(** {2. Utilities} *)
 
-let run : string -> unit =
- fun cmd ->
-  let open Unix in
-  let ch = open_process_full cmd [||] in
-  let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then () else assert false
+exception BadStatus of string
 
 let rec read_lines ch =
   try
@@ -15,23 +10,45 @@ let rec read_lines ch =
     x :: read_lines ch
   with End_of_file -> []
 
+let run_error_msg cmd status =
+  let open Unix in
+  let status =
+    match status with
+    | WEXITED d -> "WEXITED " ^ string_of_int d
+    | WSIGNALED d -> "WSIGNALED " ^ string_of_int d
+    | WSTOPPED d -> "WSTOPPED " ^ string_of_int d
+  in
+  Printf.sprintf "%S exited with status: %s" cmd status
+
+let run : string -> unit =
+ fun cmd ->
+  let open Unix in
+  let ch = open_process_full cmd [||] in
+  let _, c = waitpid [] (process_full_pid ch) in
+  if c = WEXITED 0 then () else raise (BadStatus (run_error_msg cmd c))
+
 let run_lines : string -> string list =
  fun cmd ->
   let open Unix in
   let ((out, _, _) as ch) = open_process_full cmd [||] in
   let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then read_lines out else assert false
+  if c = WEXITED 0 then read_lines out
+  else raise (BadStatus (run_error_msg cmd c))
 
 let run_string : string -> string =
  fun cmd -> run_lines cmd |> String.concat "\n"
 
 let rmrf path = run Format.(sprintf "rm -rf %s" path)
 
+(** {2. Types} *)
+
 type hash = Hash of string
+
+type repository = Repo of string
 
 let hash_from_string str = Hash str
 
-type repository = Repo of string
+(** {2. Core functions} *)
 
 let open_repository : ?path:string -> unit -> repository =
  fun ?(path = ".") () ->
