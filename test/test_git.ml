@@ -1,4 +1,5 @@
 module Git = Ometrics__Git
+module Change = Ometrics__Change
 open Git
 
 let pp_repo fmt (Repo x) = Format.fprintf fmt "Report %s" x
@@ -69,6 +70,15 @@ let get_commits_after () =
   Alcotest.(check (list eq_hash))
     "get_commits_after gets [foo;bar]" expected actual
 
+let get_changes () =
+  let branch = "merge-commits" in
+  let repo = clone_repository ~branch git in
+  let hash = find_last_merge_commit repo |> Option.get in
+  let expected = Change.[ Edition "foo"; Edition "bar" ] in
+  let actual = Git.get_changes ~since:hash repo in
+  Alcotest.(check Test_change.eq_changes)
+    "get_changes finds edit bar and foo" expected actual
+
 let tests =
   ( "Git",
     Alcotest.
@@ -79,4 +89,5 @@ let tests =
         test_case "no_merge_commit" `Quick no_merge_commit;
         test_case "find_merge_commit" `Quick find_merge_commit;
         test_case "get_commits_after" `Quick get_commits_after;
+        test_case "get_changes" `Quick get_changes;
       ] )
