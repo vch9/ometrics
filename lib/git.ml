@@ -58,7 +58,7 @@ let root_of (Repo path) = path
 
 let mktempdir () = run_string "mktemp -d"
 
-let with_tmp_dir : (unit -> 'a) -> 'a =
+let with_tmp_dir ?(clean = true) : (unit -> 'a) -> 'a =
  fun k ->
   let cwd = Sys.getcwd () in
   try
@@ -66,20 +66,32 @@ let with_tmp_dir : (unit -> 'a) -> 'a =
     Sys.chdir tmpd;
     let res = k () in
     Sys.chdir cwd;
-    ignore (rmrf tmpd);
+    if clean then ignore (rmrf tmpd);
     res
   with e ->
     Sys.chdir cwd;
     raise e
 
+let clone ?branch git =
+  let branch =
+    match branch with None -> "" | Some branch -> "--branch " ^ branch
+  in
+  run Format.(sprintf "git clone %s %s ." branch git)
+
 let with_tmp_clone : repository -> ?hash:hash -> (repository -> 'a) -> 'a =
  fun (Repo path) ?hash k ->
   with_tmp_dir (fun () ->
-      run Format.(sprintf "git clone %s ." path);
+      clone path;
       Option.fold hash ~none:() ~some:(fun (Hash h) ->
           (run @@ Format.(sprintf "git checkout %s" h));
           ());
       k @@ open_repository ())
+
+let clone_repository : ?branch:string -> string -> repository =
+ fun ?branch git ->
+  with_tmp_dir ~clean:false (fun () ->
+      let () = clone ?branch git in
+      open_repository ())
 
 let find_last_merge_commit : repository -> hash =
  fun (Repo r) ->

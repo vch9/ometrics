@@ -19,6 +19,12 @@ val open_repository : ?path:string -> unit -> repository
     If the current repository or [path] is not a git repository,
     raises [Not_a_git_repository]. *)
 
+val clone_repository : ?branch:string -> string -> repository
+(** [clone_repository ?branch git] clones [git] and returns a [repository] on
+    branch [branch] if present.
+
+    If [git] is not a repository, raises [Not_a_git_repository] *)
+
 val root_of : repository -> string
 (** [root_of r] returns the absolute path of the root of [r]. *)
 
