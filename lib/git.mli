@@ -1,10 +1,12 @@
 open Change
 
-type hash
+exception BadStatus of string
+
+type hash = Hash of string
 
 val hash_from_string : string -> hash
 
-type repository
+type repository = Repo of string
 
 val open_repository : ?path:string -> unit -> repository
 (** [open_repository ()] returns a [repository] if the current working
@@ -39,3 +41,9 @@ val get_commits_after : repository -> hash -> hash list
 val changes_of : repository -> hash -> changes
 
 val get_changes : repository -> since:hash -> changes
+
+(** / **)
+
+val read_lines : in_channel -> string list
+
+val run_string : string -> string
