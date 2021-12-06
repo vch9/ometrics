@@ -1,13 +1,16 @@
 open Change
 
-let ignore _ = ()
+(** {2. Utilities} *)
 
-let run : string -> unit =
- fun cmd ->
-  let open Unix in
-  let ch = open_process_full cmd [||] in
-  let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then () else assert false
+(** {3. Option Monad} *)
+
+(* let map a f = Option.map f a
+ *
+ * let ( >>? ) = map *)
+
+let ( >>= ) = Option.bind
+
+exception BadStatus of string
 
 let rec read_lines ch =
   try
@@ -15,23 +18,48 @@ let rec read_lines ch =
     x :: read_lines ch
   with End_of_file -> []
 
+let run_error_msg cmd status =
+  let open Unix in
+  let status =
+    match status with
+    | WEXITED d -> "WEXITED " ^ string_of_int d
+    | WSIGNALED d -> "WSIGNALED " ^ string_of_int d
+    | WSTOPPED d -> "WSTOPPED " ^ string_of_int d
+  in
+  Printf.sprintf "%S exited with status: %s" cmd status
+
+let run : string -> unit =
+ fun cmd ->
+  let open Unix in
+  let ch = open_process_full cmd [||] in
+  let _, c = waitpid [] (process_full_pid ch) in
+  if c = WEXITED 0 then () else raise (BadStatus (run_error_msg cmd c))
+
 let run_lines : string -> string list =
  fun cmd ->
   let open Unix in
   let ((out, _, _) as ch) = open_process_full cmd [||] in
   let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then read_lines out else assert false
+  if c = WEXITED 0 then read_lines out
+  else raise (BadStatus (run_error_msg cmd c))
 
 let run_string : string -> string =
  fun cmd -> run_lines cmd |> String.concat "\n"
 
+let run_string_opt : string -> string option =
+ fun cmd -> try Some (run_string cmd) with BadStatus _ -> None
+
 let rmrf path = run Format.(sprintf "rm -rf %s" path)
+
+(** {2. Types} *)
 
 type hash = Hash of string
 
+type repository = Repo of string
+
 let hash_from_string str = Hash str
 
-type repository = Repo of string
+(** {2. Core functions} *)
 
 let open_repository : ?path:string -> unit -> repository =
  fun ?(path = ".") () ->
@@ -41,7 +69,7 @@ let root_of (Repo path) = path
 
 let mktempdir () = run_string "mktemp -d"
 
-let with_tmp_dir : (unit -> 'a) -> 'a =
+let with_tmp_dir ?(clean = true) : (unit -> 'a) -> 'a =
  fun k ->
   let cwd = Sys.getcwd () in
   try
@@ -49,27 +77,40 @@ let with_tmp_dir : (unit -> 'a) -> 'a =
     Sys.chdir tmpd;
     let res = k () in
     Sys.chdir cwd;
-    ignore (rmrf tmpd);
+    if clean then ignore (rmrf tmpd);
     res
   with e ->
     Sys.chdir cwd;
     raise e
 
+let clone ?branch git =
+  let branch =
+    match branch with None -> "" | Some branch -> "--branch " ^ branch
+  in
+  run Format.(sprintf "git clone %s %s ." branch git)
+
 let with_tmp_clone : repository -> ?hash:hash -> (repository -> 'a) -> 'a =
  fun (Repo path) ?hash k ->
   with_tmp_dir (fun () ->
-      run Format.(sprintf "git clone %s ." path);
+      clone path;
       Option.fold hash ~none:() ~some:(fun (Hash h) ->
           (run @@ Format.(sprintf "git checkout %s" h));
           ());
       k @@ open_repository ())
 
-let find_last_merge_commit : repository -> hash =
+let clone_repository : ?branch:string -> string -> repository =
+ fun ?branch git ->
+  with_tmp_dir ~clean:false (fun () ->
+      let () = clone ?branch git in
+      open_repository ())
+
+let find_last_merge_commit : repository -> hash option =
  fun (Repo r) ->
-  Hash
-    (run_string
-       Format.(
-         sprintf "git -C %s --no-pager log --merges -n1 --pretty=format:%%H" r))
+  let cmd =
+    Format.(
+      sprintf "git -C %s --no-pager log --merges -n1 --pretty=format:%%H" r)
+  in
+  run_string_opt cmd >>= function "" -> None | h -> Some (Hash h)
 
 let get_commits_after : repository -> hash -> hash list =
  fun (Repo r) (Hash h) ->

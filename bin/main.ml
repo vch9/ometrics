@@ -29,6 +29,9 @@ let conciliate_undocumented before after = function
       (path', conciliate (List.assoc path before) (List.assoc path' after))
   | _ -> assert false
 
+(** [filter_duplicate_undocumented l] removes implementation files when
+    the interface is present. The implementation file (.ml) must be _before_
+    the interface one (.mli). *)
 let rec filter_duplicate_undocumented = function
   | (path, _) :: (path', undoc) :: rst when String.equal path (path' ^ "i") ->
       (path, undoc) :: filter_duplicate_undocumented rst
@@ -45,7 +48,8 @@ let check_mr path hash =
 
   let h =
     match hash with
-    | "" -> Git.find_last_merge_commit r
+    | "" -> Git.find_last_merge_commit r |> Option.get
+    (* todo: gracefully handle None *)
     | s -> Git.hash_from_string s
   in
 
