@@ -17,5 +17,10 @@ val change_from_string : string -> change
 val is_ml_change : change -> bool
 
 val files_to_analyze : changes -> string list * string list
+(** [files_to_analyze changes] computes the list of files to analyze
+    before [changes] and after
+
+    e.g.:
+    {[ files_to_analyse [ Addition "foo" ] = ([], ["foo"]) ]} *)
 
 val merge_changes : changes -> changes -> changes

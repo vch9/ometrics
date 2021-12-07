@@ -11,9 +11,9 @@ clean:
 	rm -rf _coverage
 
 coverage-summary:
-	@dune runtest -f --instrument-with bisect_ppx
+	@dune runtest -f --instrument-with bisect_ppx test/ || true
 	@bisect-ppx-report summary
 
 coverage-html:
-	@dune runtest -f --instrument-with bisect_ppx test/
+	@dune runtest -f --instrument-with bisect_ppx test/ || true
 	@bisect-ppx-report html

@@ -3,6 +3,8 @@ module Change = Ometrics__Change
 
 let eq = Alcotest.of_pp Change.pp
 
+let eq_changes = Alcotest.list eq
+
 let gen_addition = Gen.(oneof [ pure "A"; pure "C" ])
 
 let gen_deletion = Gen.pure "D"
@@ -130,7 +132,7 @@ let tests =
       test_change_from_string_addition_any;
       test_change_from_string_deletion_any;
       test_change_from_string_edition_any;
-      (* test_change_from_string_renaming_any; *)
+      test_change_from_string_renaming_any;
       test_change_from_string_fail;
       test_is_ml_change;
       test_merge_same_list;

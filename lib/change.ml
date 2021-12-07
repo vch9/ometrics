@@ -102,7 +102,7 @@ let edition_from_string str =
   else None
 
 let renaming_from_string str =
-  let rxp = Str.regexp "^R[0-9]*\t*\\(.*\\)\t*\\(.*\\)$" in
+  let rxp = Str.regexp "^R[0-9]*\t*\\(.+\\)\t+\\(.+\\)$" in
   if Str.string_match rxp str 0 then
     Some (Renaming (Str.matched_group 1 str, Str.matched_group 2 str))
   else None
