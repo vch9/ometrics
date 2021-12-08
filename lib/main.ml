@@ -1,4 +1,5 @@
 open Change
+open Monad
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
     "target.ml" otherwise. *)
@@ -58,55 +59,50 @@ let get_repo = function
   | `Path path -> Git.open_repository ~path ()
 
 let get_hash repo = function
-  | "" -> (
-      match Git.find_last_merge_commit repo with
-      | None -> failwith "Last merge commit could not be found"
-      | Some h -> h)
-  | s -> Git.hash_from_string s
+  | "" -> Git.find_last_merge_commit repo
+  | s -> return (Git.hash_from_string s)
 
-let check_mr r h =
+let check_mr r h : unit mresult =
   (* We fetch every changes since [h] in term of files *)
-  let changes = Git.get_changes r ~since:h |> List.filter is_ml_change in
+  Git.get_changes r ~since:h >>= fun changes ->
+  let changes = List.filter is_ml_change changes in
 
   (* We compute the files that were present before the changes and after *)
   let before, after = Change.files_to_analyze changes in
 
   (* We look for undocumented entries in files before the changes *)
-  let before_undoc =
-    Git.with_tmp_clone r ~hash:h (fun _r ->
-        List.map (fun p -> (p, find_undocumented_entries p)) before)
-  in
-
+  Git.with_tmp_clone r ~hash:h (fun _r ->
+      return @@ List.map (fun p -> (p, find_undocumented_entries p)) before)
+  >>= fun before_undoc ->
   (* We look for undocumented entries in files after the changes *)
-  let after_undoc =
-    Git.with_tmp_clone r (fun _r ->
-        List.map (fun p -> (p, find_undocumented_entries p)) after)
-  in
-
+  Git.with_tmp_clone r (fun _r ->
+      return @@ List.map (fun p -> (p, find_undocumented_entries p)) after)
+  >>= fun after_undoc ->
   (* We remove undocumented entries if they were also undocumented before *)
   let undocumented_entries =
     conciliate_undocumented_all before_undoc after_undoc changes
   in
 
   (* Finally, we print the undocumentend entries found *)
-  List.iter
-    (fun (p, deps) ->
-      Format.(
-        if 0 < List.length deps then (
-          printf "@[<v># `%s`@ @ @]" p;
-          printf "@[<v>%a@ @ @]"
-            (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
-            deps)))
-    undocumented_entries
+  return
+  @@ List.iter
+       (fun (p, deps) ->
+         Format.(
+           if 0 < List.length deps then (
+             printf "@[<v># `%s`@ @ @]" p;
+             printf "@[<v>%a@ @ @]"
+               (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
+                    fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
+               deps)))
+       undocumented_entries
 
 let check_clone git branch commit =
-  let branch = match branch with "" -> None | x -> Some x in
-  let repo = get_repo @@ `Git (git, branch) in
-  let hash = get_hash repo commit in
-  Ok (check_mr repo hash)
+  run
+    (let branch = match branch with "" -> None | x -> Some x in
+     get_repo @@ `Git (git, branch) >>= fun repo ->
+     get_hash repo commit >>= fun hash -> check_mr repo hash)
 
 let check path commit =
-  let repo = get_repo @@ `Path path in
-  let hash = get_hash repo commit in
-  Ok (check_mr repo hash)
+  run
+    ( get_repo (`Path path) >>= fun repo ->
+      get_hash repo commit >>= fun hash -> check_mr repo hash )

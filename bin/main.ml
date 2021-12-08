@@ -19,8 +19,7 @@ module Check = struct
       let doc = "Git project path." in
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
-    ( Term.(term_result (const check $ path $ commit)),
-      Term.info "check" ~version ~doc ~exits )
+    (Term.(const check $ path $ commit), Term.info "check" ~version ~doc ~exits)
 
   let check_clone =
     let exits = Term.default_exits in
@@ -32,7 +31,7 @@ module Check = struct
       let doc = "Git project branch." in
       Arg.(value & opt string "" & info [ "b"; "branch" ] ~doc ~docv:"BRANCH")
     in
-    ( Term.(term_result (const check_clone $ git $ branch $ commit)),
+    ( Term.(const check_clone $ git $ branch $ commit),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
