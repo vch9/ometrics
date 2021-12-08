@@ -1,6 +1,5 @@
 open Change
-
-exception BadStatus of string
+open Monad
 
 type hash = Hash of string
 
@@ -8,7 +7,7 @@ val hash_from_string : string -> hash
 
 type repository = Repo of string
 
-val open_repository : ?path:string -> unit -> repository
+val open_repository : ?path:string -> unit -> repository mresult
 (** [open_repository ()] returns a [repository] if the current working
     directory is inside a git repository.
 
@@ -19,7 +18,7 @@ val open_repository : ?path:string -> unit -> repository
     If the current repository or [path] is not a git repository,
     raises [Not_a_git_repository]. *)
 
-val clone_repository : ?branch:string -> string -> repository
+val clone_repository : ?branch:string -> string -> repository mresult
 (** [clone_repository ?branch git] clones [git] and returns a [repository] on
     branch [branch] if present.
 
@@ -28,26 +27,27 @@ val clone_repository : ?branch:string -> string -> repository
 val root_of : repository -> string
 (** [root_of r] returns the absolute path of the root of [r]. *)
 
-val with_tmp_clone : repository -> ?hash:hash -> (repository -> 'a) -> 'a
+val with_tmp_clone :
+  repository -> ?hash:hash -> (repository -> 'a mresult) -> 'a mresult
 (** [with_tmp_clone r k] clones the repository [r] in a temporary
     directory, and calls the continuation [k] with the resulting repository.
 
     The temporary clone is deleted once the continuation
     terminates. *)
 
-val find_last_merge_commit : repository -> hash option
+val find_last_merge_commit : repository -> hash mresult
 (** [find_last_merge_commit r] tries to find the most recent merge commit. *)
 
-val get_commits_after : repository -> hash -> hash list
+val get_commits_after : repository -> hash -> hash list mresult
 (** [get_commits_after r h] returns the list of hashes of commits that have been
     applied of top of [h] up until the head of [r]. *)
 
-val changes_of : repository -> hash -> changes
+val changes_of : repository -> hash -> changes mresult
 
-val get_changes : repository -> since:hash -> changes
+val get_changes : repository -> since:hash -> changes mresult
 
 (** / **)
 
 val read_lines : in_channel -> string list
 
-val run_string : string -> string
+val run_string : string -> string mresult
