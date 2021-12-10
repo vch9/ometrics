@@ -1,0 +1,12 @@
+image: ocaml/opam
+
+stages:
+  - test
+
+test:
+  script:
+    - git submodule update --init
+    - opam switch create . 4.12.0 --with-test --yes
+    - eval $(opam env)
+    - dune build
+    - dune runtest
