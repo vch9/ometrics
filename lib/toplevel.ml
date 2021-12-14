@@ -1,5 +1,5 @@
-open Entry
-open Misc
+(* open Entry
+ * open Misc *)
 
 let make_config path =
   let mconfig = Mconfig.initial in
@@ -35,12 +35,12 @@ let entries_of_typedtree ns comments = function
   | `Implementation s -> Implementation.to_entries ns comments s
   | `Interface i -> Interface.to_entries ns comments i
 
-let toplevel_entry comments name =
-  {
-    entry_kind = Module;
-    entry_name = name;
-    entry_documented = is_documented comments Location.none;
-  }
+(* let toplevel_entry comments name =
+ *   {
+ *     entry_kind = Module;
+ *     entry_name = name;
+ *     entry_documented = is_documented comments Location.none;
+ *   } *)
 
 let to_entries target =
   let mconfig = make_config target in
@@ -54,5 +54,6 @@ let to_entries target =
       let typing = Mpipeline.typer_result pipeline in
       let typedtree = Mtyper.get_typedtree typing in
       let comments = Mpipeline.reader_comments pipeline in
-      toplevel_entry comments unit
-      :: entries_of_typedtree [ unit ] comments typedtree)
+      (* toplevel_entry comments unit
+       * :: *)
+      entries_of_typedtree [ unit ] comments typedtree)

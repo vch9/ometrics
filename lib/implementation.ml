@@ -24,15 +24,16 @@ let entries_of_type_declaration ns comments decl =
 
 let rec entries_of_module_binding ns comments binding =
   Option.fold binding.mb_id ~none:[] ~some:(fun ident ->
-      {
-        entry_name = fully_qualified_name ns ident;
-        entry_kind =
-          (match binding.mb_expr.mod_desc with
-          | Tmod_functor (_, _) -> Functor
-          | _ -> Module);
-        entry_documented = is_documented comments binding.mb_loc;
-      }
-      :: entries_of_module_expr ns comments ident binding.mb_expr)
+      (* {
+       *   entry_name = fully_qualified_name ns ident;
+       *   entry_kind =
+       *     (match binding.mb_expr.mod_desc with
+       *     | Tmod_functor (_, _) -> Functor
+       *     | _ -> Module);
+       *   entry_documented = is_documented comments binding.mb_loc;
+       * }
+       * :: *)
+      entries_of_module_expr ns comments ident binding.mb_expr)
 
 and entries_of_module_expr ns comments ident expr =
   match expr.mod_desc with
