@@ -38,7 +38,7 @@ let open_and_clean () =
 (** Gitlab project for testing purposes
 
     https://gitlab.com/vch9/ometrics-test *)
-let git = "git@gitlab.com:vch9/ometrics-test.git"
+let git = "https://gitlab.com/vch9/ometrics-test.git"
 
 let no_merge_commit () =
   let branch = "no-commits" in
