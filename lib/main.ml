@@ -62,10 +62,13 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr r h : unit mresult =
+let check_mr r h exclude_files exclude_re : unit mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
-  let changes = List.filter is_ml_change changes in
+  let changes =
+    changes |> List.filter is_ml_change
+    |> List.filter (fun ch -> not (is_excluded exclude_files exclude_re ch))
+  in
 
   (* We compute the files that were present before the changes and after *)
   let before, after = Change.files_to_analyze changes in
@@ -96,13 +99,15 @@ let check_mr r h : unit mresult =
                deps)))
        undocumented_entries
 
-let check_clone git branch commit =
+let check_clone git branch commit exclude_files exclude_re =
   run
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
-     get_hash repo commit >>= fun hash -> check_mr repo hash)
+     get_hash repo commit >>= fun hash ->
+     check_mr repo hash exclude_files exclude_re)
 
-let check path commit =
+let check path commit exclude_files exclude_re =
   run
     ( get_repo (`Path path) >>= fun repo ->
-      get_hash repo commit >>= fun hash -> check_mr repo hash )
+      get_hash repo commit >>= fun hash ->
+      check_mr repo hash exclude_files exclude_re )

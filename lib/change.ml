@@ -19,25 +19,49 @@ let eq x y =
   | _ -> false
 
 type change = t
-
 type changes = change list
 
-let is_ml_change : change -> bool =
-  let name_ext path =
-    let base = Filename.basename path in
-    let ext = Filename.extension base in
-    let file = Filename.remove_extension base in
-    (file, ext)
-  in
+let name_ext path =
+  let base = Filename.basename path in
+  let ext = Filename.extension base in
+  let file = Filename.remove_extension base in
+  (file, ext)
 
-  let is_ml_file path =
-    let _, ext = name_ext path in
-    ext = ".ml" || ext = ".mli"
-  in
+let is_ml_file path =
+  let _, ext = name_ext path in
+  ext = ".ml" || ext = ".mli"
 
-  function
+let is_ml_change : change -> bool = function
   | Addition path | Edition path -> is_ml_file path
   | Renaming (before, after) -> is_ml_file before && is_ml_file after
+  | _ -> false
+
+let is_excluded_files path : string -> bool =
+ fun change ->
+  let is_dir = String.get path (String.length path - 1) = '/' in
+  if is_dir then
+    let dir = String.sub path 0 (String.length path - 1) in
+    String.length path >= String.length dir
+    && dir = String.sub change 0 (String.length dir)
+  else path = change
+
+let is_excluded_re re : string -> bool =
+ fun change ->
+  if re = "" then false
+  else
+    let file, _ = name_ext change in
+    let rxp = Str.regexp re in
+    Str.string_match rxp file 0
+
+let is_excluded exclude_files exclude_re : change -> bool =
+ fun ch ->
+  let is_excluded_files ch =
+    List.exists (fun ef -> is_excluded_files ef ch) exclude_files
+  in
+  let is_excluded_re = is_excluded_re exclude_re in
+  match ch with
+  | Addition path | Edition path | Renaming (_, path) ->
+      is_excluded_files path || is_excluded_re path
   | _ -> false
 
 let rec add_deletion path = function
