@@ -3,7 +3,8 @@ all: build
 build:
 	@dune build
 
-test:
+test: build
+	ln -sf _build/default/bin/main.exe ometrics
 	@dune runtest
 
 clean:
