@@ -62,7 +62,7 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr r h exclude_files exclude_re : unit mresult =
+let check_mr r h exclude_files exclude_re : string mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
   let changes =
@@ -88,26 +88,38 @@ let check_mr r h exclude_files exclude_re : unit mresult =
 
   (* Finally, we print the undocumentend entries found *)
   return
-  @@ List.iter
-       (fun (p, deps) ->
-         Format.(
+  @@ List.fold_left
+       (fun acc (p, deps) ->
+         let open Format in
+         let pp fmt (p, deps) =
            if 0 < List.length deps then (
-             printf "@[<v># `%s`@ @ @]" p;
-             printf "@[<v>%a@ @ @]"
+             fprintf fmt "@[<v># `%s`@ @ @]" p;
+             fprintf fmt "@[<v>%a@ @ @]"
                (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
                     fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
-               deps)))
-       undocumented_entries
+               deps)
+         in
+         match deps with [] -> acc | _ -> asprintf "%s%a" acc pp (p, deps))
+       "" undocumented_entries
+
+let check_clone_temp git branch commit exclude_files exclude_re =
+  run_dry
+    (let branch = match branch with "" -> None | x -> Some x in
+     get_repo @@ `Git (git, branch) >>= fun repo ->
+     get_hash repo commit >>= fun hash ->
+     check_mr repo hash exclude_files exclude_re)
 
 let check_clone git branch commit exclude_files exclude_re =
   run
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
      get_hash repo commit >>= fun hash ->
-     check_mr repo hash exclude_files exclude_re)
+     check_mr repo hash exclude_files exclude_re >>= fun msg ->
+     return (print_endline msg))
 
 let check path commit exclude_files exclude_re =
   run
     ( get_repo (`Path path) >>= fun repo ->
       get_hash repo commit >>= fun hash ->
-      check_mr repo hash exclude_files exclude_re )
+      check_mr repo hash exclude_files exclude_re >>= fun msg ->
+      return (print_endline msg) )
