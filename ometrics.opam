@@ -14,6 +14,7 @@ depends: [
   "bisect_ppx" {dev & >= "2.6.0"}
 ]
 build: [
+  ["git" "submodule" "update" "--init" "--recursive"]
   ["dune" "build" "-p" name "-j" jobs]
 ]
 authors: [
