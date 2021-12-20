@@ -1,4 +1,5 @@
 (executable
  (public_name ometrics)
  (name main)
+ (package ometrics)
  (libraries ometrics cmdliner))

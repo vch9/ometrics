@@ -1,0 +1,21 @@
+opam-version: "2.0"
+version: "dev"
+maintainer: "Thomas Letan <lthms@nomadic-labs.com>"
+depends: [
+  "ocaml" {>= "4.12" & < "4.13"}
+  "yojson"
+  "menhirSdk" {>= "20211012" & < "20211013"}
+  "menhirLib" {>= "20211012" & < "20211013"}
+  "menhir" {>= "20211012" & < "20211013"}
+  "csexp"
+  "result"
+  "cmdliner"
+  "qcheck-alcotest" {with-test & >= "0.18"}
+  "bisect_ppx" {dev & >= "2.6.0"}
+]
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]
+authors: [
+  "Thomas Letan <lthms@nomadic-labs.com>"
+]
