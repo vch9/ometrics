@@ -1,5 +1,0 @@
-[submodule "vendor/merlin"]
-  path = vendor/merlin
-  ignore = dirty
-  branch = lsp
-  url = https://github.com/rgrinberg/merlin/
