@@ -1,6 +1,6 @@
 (library
  (name ometrics)
- (public_name ometrics)
+ (public_name ometrics.core)
  (libraries unix str merlin.kernel merlin.analysis)
  (instrumentation
   (backend bisect_ppx)))
