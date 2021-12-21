@@ -68,6 +68,8 @@ let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 (* let ml_module_B_is_documented () = ML.assert_documented Module "B"
  * let ml_module_C_is_undocumented () = ML.assert_undocumented Module "C" *)
 
+let ml_entries_in_module () = ML.assert_documented Value "Foo.x"
+
 (** {3 MLI} *)
 
 (* Fails when a License is present *)
@@ -80,6 +82,8 @@ let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 (* let mli_module_B_is_documented () = MLI.assert_documented Module "B"
  * let mli_module_C_is_undocumented () = MLI.assert_undocumented Module "C" *)
 
+let mli_entries_in_module () = MLI.assert_undocumented Value "Foo.x"
+
 let tests =
   ( "Entry",
     Alcotest.
@@ -89,7 +93,9 @@ let tests =
         test_case "mli-t-is-documented" `Quick mli_t_is_documented;
         test_case "mli-u-is-undocumented" `Quick mli_u_is_undocumented;
         test_case "ml-foo-is-documented" `Quick ml_foo_is_documented;
-        test_case "mli-foo-is-undocumented" `Quick mli_foo_is_undocumented
+        test_case "mli-foo-is-undocumented" `Quick mli_foo_is_undocumented;
+        test_case "ml-entries-in-module" `Quick ml_entries_in_module;
+        test_case "mli-entries-in-module" `Quick mli_entries_in_module;
         (* test_case "ml-toplevel-is-documented" `Quick ml_toplevel_is_documented; *)
         (* test_case "ml-A-is-documented" `Quick ml_module_A_is_documented; *)
         (* test_case "ml-B-is-documented" `Quick ml_module_B_is_documented; *)
@@ -97,5 +103,5 @@ let tests =
         (* test_case "mli-toplevel-is-documented" `Quick mli_toplevel_is_documented; *)
         (* test_case "mli-A-is-documented" `Quick mli_module_A_is_documented; *)
         (* test_case "mli-B-is-documented" `Quick mli_module_B_is_documented; *)
-        (* test_case "mli-C-is-undocumented" `Quick mli_module_C_is_undocumented; *);
+        (* test_case "mli-C-is-undocumented" `Quick mli_module_C_is_undocumented; *)
       ] )

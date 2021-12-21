@@ -28,9 +28,13 @@
 type t
 (** Test *)
 
-type u =
+type u
 
 val foo : unit -> unit
+
+module Foo : sig
+  val x : int
+end
 
 (** Test *)
 module A : sig
