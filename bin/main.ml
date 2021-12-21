@@ -16,6 +16,10 @@ let exclude_re =
   let doc = "Exclude files matching RE from the merge request's analysis." in
   Arg.(value & opt string "" & info [ "e-re"; "exclude-re" ] ~doc ~docv:"RE")
 
+let output =
+  let doc = "Output report to $(i,PATH)" in
+  Arg.(value & opt string "" & info [ "o"; "output" ] ~doc ~docv:"OUTPUT")
+
 module Check = struct
   let doc =
     "Check undocument function between current head and last merge commit."
@@ -30,7 +34,7 @@ module Check = struct
       let doc = "Git project path." in
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
-    ( Term.(const check $ path $ commit $ exclude_files $ exclude_re),
+    ( Term.(const check $ path $ commit $ exclude_files $ exclude_re $ output),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -44,7 +48,8 @@ module Check = struct
       Arg.(value & opt string "" & info [ "b"; "branch" ] ~doc ~docv:"BRANCH")
     in
     ( Term.(
-        const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re),
+        const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
+        $ output),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
