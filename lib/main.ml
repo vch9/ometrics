@@ -17,7 +17,7 @@ let rec conciliate (before : Entry.t list) (after : Entry.t list) : Entry.t list
     =
   match (before, after) with
   | eb :: rstb, ea :: rsta -> (
-      match compare ea eb with
+      match Entry.compare ea eb with
       | 0 -> conciliate rstb rsta
       | x when x < 0 -> ea :: conciliate before rsta
       | _ -> conciliate rstb after)
@@ -54,6 +54,41 @@ let conciliate_undocumented_all before after chs =
 
 (** {2. Check } *)
 
+(** [link_prefix git hash] computes the link prefix based on [git] and [hash].
+
+    Example:
+    link_prefix "https://gitlab.com/nomadic-labs/tezos.git" "your_hash" it creates:
+    https://gitlab.com/nomadic-labs/tezos/-/tree/your_hash
+*)
+let link_prefix git hash =
+  let is_gitlab =
+    let re = Str.regexp "https:\\/\\/gitlab\\.com\\/\\(.+\\)\\/tezos\\.git" in
+    Str.string_match re git 0
+  in
+  Printf.printf "is_gitlab: %b\n" is_gitlab;
+  if is_gitlab then
+    let group = Str.matched_group 1 git in
+    Some (Printf.sprintf "https://gitlab.com/%s/tezos/-/blob/%s/" group hash)
+  else None
+
+(** [report_full entries] creates a full report for [entries]. It list
+    every unducommented entry found in [entries] with a clickable link
+    to the line in question. In a markdown format. *)
+let report_full fmt ?git h entries =
+  let ( >>= ) = Option.bind in
+  let Git.(Hash h) = h in
+  let with_link = git >>= fun git -> link_prefix git h in
+  List.iter
+    (fun (p, deps) ->
+      Format.(
+        if 0 < List.length deps then (
+          fprintf fmt "@[<v># `%s`@ @ @]" p;
+          fprintf fmt "@[<v>%a@ @ @]"
+            (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
+                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false ?with_link) e))
+            deps)))
+    entries
+
 let get_repo = function
   | `Git (git, branch) -> Git.clone_repository ?branch git
   | `Path path -> Git.open_repository ~path ()
@@ -62,7 +97,7 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr ?output r h exclude_files exclude_re : unit mresult =
+let check_mr ?output ?git r h exclude_files exclude_re : unit mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
   let changes =
@@ -95,17 +130,7 @@ let check_mr ?output r h exclude_files exclude_re : unit mresult =
       output
   in
 
-  return
-  @@ List.iter
-       (fun (p, deps) ->
-         Format.(
-           if 0 < List.length deps then (
-             fprintf fmt "@[<v># `%s`@ @ @]" p;
-             fprintf fmt "@[<v>%a@ @ @]"
-               (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                    fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
-               deps)))
-       undocumented_entries
+  return @@ report_full fmt ?git h undocumented_entries
 
 let opt_string = function "" -> None | x -> Some x
 
@@ -115,7 +140,7 @@ let check_clone git branch commit exclude_files exclude_re output =
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
      get_hash repo commit >>= fun hash ->
-     check_mr repo hash exclude_files exclude_re ?output)
+     check_mr ~git repo hash exclude_files exclude_re ?output)
 
 let check path commit exclude_files exclude_re output =
   let output = opt_string output in

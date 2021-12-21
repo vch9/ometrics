@@ -23,3 +23,5 @@ let rec pattern_idents : type k. k general_pattern -> string list =
   | Tpat_or (pat1, pat2, _) ->
       List.append (pattern_idents pat1) (pattern_idents pat2)
   | _ -> []
+
+let line loc = loc.Warnings.loc_start.Lexing.pos_lnum
