@@ -17,12 +17,20 @@ let exclude_re =
   Arg.(value & opt string "" & info [ "e-re"; "exclude-re" ] ~doc ~docv:"RE")
 
 let output =
-  let doc = "Output report to $(i,PATH)" in
+  let doc = "Output information to $(i,PATH)" in
   Arg.(value & opt string "" & info [ "o"; "output" ] ~doc ~docv:"OUTPUT")
 
 module Check = struct
   let doc =
     "Check undocument function between current head and last merge commit."
+
+  let report =
+    let doc = "Output full report to $(i,PATH)" in
+    Arg.(value & opt string "" & info [ "r"; "report" ] ~doc ~docv:"OUTPUT")
+
+  let partial =
+    let doc = "Produce a partial report." in
+    Arg.(value & flag & info [ "p"; "partial" ] ~doc ~docv:"PARTIAL")
 
   let commit =
     let doc = "Base commit to check." in
@@ -34,7 +42,9 @@ module Check = struct
       let doc = "Git project path." in
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
-    ( Term.(const check $ path $ commit $ exclude_files $ exclude_re $ output),
+    ( Term.(
+        const check $ path $ commit $ exclude_files $ exclude_re $ output
+        $ partial $ report),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -49,7 +59,7 @@ module Check = struct
     in
     ( Term.(
         const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output),
+        $ output $ partial $ report),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
