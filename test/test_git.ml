@@ -38,7 +38,7 @@ let open_and_clean () =
 (** Gitlab project for testing purposes
 
     https://gitlab.com/vch9/ometrics-test *)
-let git = "git@gitlab.com:vch9/ometrics-test.git"
+let git = "https://gitlab.com/vch9/ometrics-test.git"
 
 let no_merge_commit () =
   let branch = "no-commits" in
@@ -53,7 +53,9 @@ let find_merge_commit () =
   let expected = Some (Hash "7b3d5b8c1c054d280637f4e11cd97135577d3fb5") in
   let actual =
     run_dry
-      (clone_repository ~branch git >>= fun repo -> find_last_merge_commit repo)
+      ( clone_repository ~branch git >>= fun repo ->
+        let () = Printf.printf "repo: %s" (Git.root_of repo) in
+        find_last_merge_commit repo )
   in
   Alcotest.(check (option eq_hash))
     "find_merge_commit should find" expected actual
@@ -96,7 +98,7 @@ let tests =
         test_case "open_bad_repo" `Quick open_bad_repo;
         test_case "open_and_clean" `Quick open_and_clean;
         test_case "no_merge_commit" `Quick no_merge_commit;
-        test_case "find_merge_commit" `Quick find_merge_commit;
-        test_case "get_commits_after" `Quick get_commits_after;
-        test_case "get_changes" `Quick get_changes;
+        test_case "find_merge_commit" `Quick find_merge_commit
+        (* test_case "get_commits_after" `Quick get_commits_after;
+         * test_case "get_changes" `Quick get_changes; *);
       ] )

@@ -4,8 +4,9 @@ maintainer: "Thomas Letan <lthms@nomadic-labs.com>"
 depends: [
   "ocaml" {>= "4.12" & < "4.13"}
   "yojson"
-  "menhirSdk"
-  "menhirLib"
+  "menhirSdk" {>= "20211012" & < "20211013"}
+  "menhirLib" {>= "20211012" & < "20211013"}
+  "menhir" {>= "20211012" & < "20211013"}
   "csexp"
   "result"
   "cmdliner"

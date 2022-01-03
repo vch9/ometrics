@@ -22,13 +22,14 @@ let entries_of_sig_type ns comments ident decl =
   ]
 
 let rec entries_of_sig_module ns comments ident decl =
-  {
-    entry_name = fully_qualified_name ns ident;
-    entry_kind =
-      (match decl.md_type with Mty_functor (_, _) -> Functor | _ -> Module);
-    entry_documented = is_documented comments decl.md_loc;
-  }
-  :: entries_of_module_type ns comments ident decl.md_type
+  (* {
+   *   entry_name = fully_qualified_name ns ident;
+   *   entry_kind =
+   *     (match decl.md_type with Mty_functor (_, _) -> Functor | _ -> Module);
+   *   entry_documented = is_documented comments decl.md_loc;
+   * }
+   * :: *)
+  entries_of_module_type ns comments ident decl.md_type
 
 and entries_of_module_type ns comments ident = function
   | Mty_signature signature ->

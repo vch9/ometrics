@@ -19,20 +19,20 @@ let status_msg cmd status =
   in
   Format.sprintf "%S exited with %s" cmd status
 
-let run : string -> unit mresult =
- fun cmd ->
-  let open Unix in
-  let ch = open_process_full cmd [||] in
-  let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then return () else fail (__LOC__, status_msg cmd c)
-
 let run_lines : string -> string list mresult =
  fun cmd ->
   let open Unix in
-  let ((out, _, _) as ch) = open_process_full cmd [||] in
+  let ((out, _, err) as ch) = open_process_full cmd [||] in
   let _, c = waitpid [] (process_full_pid ch) in
   if c = WEXITED 0 then return (read_lines out)
-  else fail (__LOC__, status_msg cmd c)
+  else
+    (Debug.dbg "Error on %s" cmd;
+    let msg = read_lines err |> String.concat "\n" in
+    Debug.dbg "Error: %s" msg;
+    fail (__LOC__, status_msg cmd c))
+
+let run : string -> unit mresult =
+ fun cmd -> run_lines cmd >>= fun _ -> return ()
 
 let run_string : string -> string mresult =
  fun cmd -> run_lines cmd >>= fun l -> return (String.concat "\n" l)

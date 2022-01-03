@@ -33,6 +33,11 @@ type u = int
 (** Test *)
 let foo () = ()
 
+module Foo = struct
+  let x = 0
+  (** Test *)
+end
+
 (** Test *)
 module A = struct
   let x = 0
