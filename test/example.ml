@@ -34,8 +34,8 @@ type u = int
 let foo () = ()
 
 module Foo = struct
-  let x = 0
   (** Test *)
+  let x = 0
 end
 
 (** Test *)

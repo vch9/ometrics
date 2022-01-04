@@ -1,15 +1,11 @@
 type location = string
-
 and msg = string
 
 type error = location * msg
-
 type 'a mresult = ('a, error list) result
 
 let return x = Ok x
-
 let fail e = Error [ e ]
-
 let pp_error fmt (loc, msg) = Format.fprintf fmt "\t%s:\n\t\t%s\n" loc msg
 
 let pp_trace fmt trace =

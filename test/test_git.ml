@@ -4,11 +4,8 @@ open Git
 open Ometrics__Monad
 
 let pp_repo fmt (Repo x) = Format.fprintf fmt "Report %s" x
-
 let eq_repo = Alcotest.of_pp pp_repo
-
 let pp_hash fmt (Hash x) = Format.fprintf fmt "Hash %s" x
-
 let eq_hash = Alcotest.of_pp pp_hash
 
 let name_project repo =

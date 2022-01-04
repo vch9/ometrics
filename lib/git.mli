@@ -46,11 +46,9 @@ val get_commits_after : repository -> hash -> hash list mresult
     applied of top of [h] up until the head of [r]. *)
 
 val changes_of : repository -> hash -> changes mresult
-
 val get_changes : repository -> since:hash -> changes mresult
 
 (** / **)
 
 val read_lines : in_channel -> string list
-
 val run_string : string -> string mresult
