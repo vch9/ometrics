@@ -28,6 +28,10 @@ module Check = struct
     let doc = "Base commit to check." in
     Arg.(value & opt string "" & info [ "h"; "hash" ] ~doc ~docv:"COMMIT")
 
+  let clickable =
+    let doc = "Create clickable links towards entries on gitlab" in
+    Arg.(value & flag & info [ "c"; "clickable" ] ~doc ~docv:"CLICKABLE")
+
   let check_open =
     let exits = Term.default_exits in
     let path =
@@ -49,7 +53,7 @@ module Check = struct
     in
     ( Term.(
         const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output),
+        $ output $ clickable),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
