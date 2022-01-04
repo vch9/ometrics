@@ -90,7 +90,7 @@ let report_full fmt ~clickable ?git h entries =
           fprintf fmt "@[<v># `%s`@ @ @]" p;
           fprintf fmt "@[<v>%a@ @ @]"
             (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false ?with_link) e))
+                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
             deps)))
     entries
 

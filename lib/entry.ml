@@ -17,24 +17,29 @@ type entry = t
 let is_documented { entry_documented; _ } = entry_documented
 let is_not_documented e = not (is_documented e)
 
-let pp ?(with_mark = false) ?with_link fmt
-    { entry_kind; entry_name; entry_documented; entry_line; entry_file } =
+let pp_kind fmt kind =
   let open Format in
-  let pp_kind fmt = function
-    (* | ModuleType -> pp_print_string fmt "ModuleType"
-     * | Functor -> pp_print_string fmt "Functor"
-     * | Module -> pp_print_string fmt "Module" *)
-    | Type -> pp_print_string fmt "Type"
-    | Value -> pp_print_string fmt "Value"
-  in
+  match kind with
+  (* | ModuleType -> pp_print_string fmt "ModuleType"
+   * | Functor -> pp_print_string fmt "Functor"
+   * | Module -> pp_print_string fmt "Module" *)
+  | Type -> pp_print_string fmt "Type"
+  | Value -> pp_print_string fmt "Value"
 
+let pp ?(with_mark = false) fmt { entry_kind; entry_name; entry_documented; _ }
+    =
+  let open Format in
+  fprintf fmt "@[<h>%a: %s%a@]" pp_kind entry_kind entry_name
+    (fun fmt _ -> if with_mark && entry_documented then fprintf fmt " ✓")
+    ()
+
+let pp_markdown ?with_link fmt
+    { entry_kind; entry_name; entry_line; entry_file; _ } =
+  let open Format in
   let name =
     match with_link with
     | None -> entry_name
     | Some prefix ->
-        sprintf "[%s](%s%s#%d)" entry_name prefix entry_file entry_line
+        sprintf "[`%s`](%s%s#%d)" entry_name prefix entry_file entry_line
   in
-
-  fprintf fmt "@[<h>%a: %s%a@]" pp_kind entry_kind name
-    (fun fmt _ -> if with_mark && entry_documented then fprintf fmt " ✓")
-    ()
+  fprintf fmt "`%a`: %s" pp_kind entry_kind name
