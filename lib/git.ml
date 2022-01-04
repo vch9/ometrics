@@ -98,6 +98,13 @@ let clone_repository : ?branch:string -> string -> repository mresult =
   with_tmp_dir ~clean:false (fun () ->
       clone ?branch git >>= fun () -> open_repository ())
 
+let find_last_commit : repository -> hash mresult =
+ fun (Repo r) ->
+  let cmd = Format.sprintf "git -C %s rev-parse HEAD" r in
+  run_string cmd >>= function
+  | "" -> fail (__LOC__, "Failed to find last commit")
+  | h -> return (Hash h)
+
 let find_last_merge_commit : repository -> hash mresult =
  fun (Repo r) ->
   let cmd =

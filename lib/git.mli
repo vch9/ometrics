@@ -35,6 +35,9 @@ val with_tmp_clone :
     The temporary clone is deleted once the continuation
     terminates. *)
 
+val find_last_commit : repository -> hash mresult
+(** [find_last_commit r] tries to find the most recent commit. *)
+
 val find_last_merge_commit : repository -> hash mresult
 (** [find_last_merge_commit r] tries to find the most recent merge commit. *)
 

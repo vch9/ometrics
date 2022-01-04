@@ -81,6 +81,7 @@ let report_full fmt ?git h entries =
   let ( >>= ) = Option.bind in
   let Git.(Hash h) = h in
   let with_link = git >>= fun git -> link_prefix git h in
+  let () = Printf.printf "with_link: some %b" (Option.is_some with_link) in
   List.iter
     (fun (p, deps) ->
       Format.(
@@ -110,13 +111,16 @@ let check_mr ?output ?git r h exclude_files exclude_re : unit mresult =
 
   (* We compute the files that were present before the changes and after *)
   let before, after = Change.files_to_analyze changes in
+  let last_commit = ref None in
 
   (* We look for undocumented entries in files before the changes *)
   Git.with_tmp_clone r ~hash:h (fun _r ->
       return @@ List.map (fun p -> (p, find_undocumented_entries p)) before)
   >>= fun before_undoc ->
   (* We look for undocumented entries in files after the changes *)
-  Git.with_tmp_clone r (fun _r ->
+  Git.with_tmp_clone r (fun r ->
+      Git.find_last_commit r >>= fun hash ->
+      last_commit := Some hash;
       return @@ List.map (fun p -> (p, find_undocumented_entries p)) after)
   >>= fun after_undoc ->
   (* We remove undocumented entries if they were also undocumented before *)
@@ -133,7 +137,7 @@ let check_mr ?output ?git r h exclude_files exclude_re : unit mresult =
       output
   in
 
-  return @@ report_full fmt ?git h undocumented_entries
+  return @@ report_full fmt ?git (Option.get !last_commit) undocumented_entries
 
 let opt_string = function "" -> None | x -> Some x
 
