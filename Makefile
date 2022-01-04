@@ -10,6 +10,7 @@ test: build
 clean:
 	@dune clean
 	rm -rf _coverage
+	rm -rf ometrics
 
 coverage-summary:
 	@dune runtest -f --instrument-with bisect_ppx test/ || true

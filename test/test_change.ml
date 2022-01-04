@@ -2,15 +2,10 @@ open QCheck2
 module Change = Ometrics__Change
 
 let eq = Alcotest.of_pp Change.pp
-
 let eq_changes = Alcotest.list eq
-
 let gen_addition = Gen.(oneof [ pure "A"; pure "C" ])
-
 let gen_deletion = Gen.pure "D"
-
 let gen_edition = Gen.pure "M"
-
 let gen_renaming = Gen.(map (fun x -> Printf.sprintf "R%d" x) (0 -- 100))
 
 let gen_printable =
@@ -38,9 +33,7 @@ let gen_change =
     ]
 
 let print_change = Format.asprintf "%a" Change.pp
-
 let eq_list = ( = )
-
 let pp_list = Format.pp_print_list Change.pp
 
 let test_change_from_string_addition_any =

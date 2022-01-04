@@ -1,4 +1,5 @@
 (test
  (name test_main)
- (flags (:standard -w -32))
+ (flags
+  (:standard -w -32))
  (libraries ometrics qcheck-alcotest))

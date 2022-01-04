@@ -25,8 +25,8 @@ let run_lines : string -> string list mresult =
   let ((out, _, err) as ch) = open_process_full cmd [||] in
   let _, c = waitpid [] (process_full_pid ch) in
   if c = WEXITED 0 then return (read_lines out)
-  else
-    (Debug.dbg "Error on %s" cmd;
+  else (
+    Debug.dbg "Error on %s" cmd;
     let msg = read_lines err |> String.concat "\n" in
     Debug.dbg "Error: %s" msg;
     fail (__LOC__, status_msg cmd c))
@@ -44,7 +44,6 @@ let rmrf path =
 (** {2. Types} *)
 
 type hash = Hash of string
-
 type repository = Repo of string
 
 let hash_from_string str = Hash str
@@ -58,7 +57,6 @@ let open_repository : ?path:string -> unit -> repository mresult =
   >>= fun r -> return (Repo r)
 
 let root_of (Repo path) = path
-
 let mktempdir () = run_string "mktemp -d"
 
 let with_tmp_dir ?(clean = true) : (unit -> 'a mresult) -> 'a mresult =
@@ -97,6 +95,13 @@ let clone_repository : ?branch:string -> string -> repository mresult =
  fun ?branch git ->
   with_tmp_dir ~clean:false (fun () ->
       clone ?branch git >>= fun () -> open_repository ())
+
+let find_last_commit : repository -> hash mresult =
+ fun (Repo r) ->
+  let cmd = Format.sprintf "git -C %s rev-parse HEAD" r in
+  run_string cmd >>= function
+  | "" -> fail (__LOC__, "Failed to find last commit")
+  | h -> return (Hash h)
 
 let find_last_merge_commit : repository -> hash mresult =
  fun (Repo r) ->

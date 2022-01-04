@@ -31,9 +31,9 @@ let merlin_source target =
   close_in file_channel;
   Msource.make file_content
 
-let entries_of_typedtree ns comments = function
-  | `Implementation s -> Implementation.to_entries ns comments s
-  | `Interface i -> Interface.to_entries ns comments i
+let entries_of_typedtree path ns comments = function
+  | `Implementation s -> Implementation.to_entries ~path ns comments s
+  | `Interface i -> Interface.to_entries ~path ns comments i
 
 (* let toplevel_entry comments name =
  *   {
@@ -56,4 +56,4 @@ let to_entries target =
       let comments = Mpipeline.reader_comments pipeline in
       (* toplevel_entry comments unit
        * :: *)
-      entries_of_typedtree [ unit ] comments typedtree)
+      entries_of_typedtree target [ unit ] comments typedtree)
