@@ -74,15 +74,23 @@ let link_prefix git hash =
       (Printf.sprintf "https://gitlab.com/%s/%s/-/tree/%s/" group project hash)
   else None
 
-(** [report_full entries] creates a full report for [entries]. It list
-    every unducommented entry found in [entries] with a clickable link
-    to the line in question. In a markdown format. *)
-let report_full fmt ~clickable ?git h entries =
-  let ( >>= ) = Option.bind in
-  let Git.(Hash h) = h in
-  let with_link =
-    (if clickable then git else None) >>= fun git -> link_prefix git h
-  in
+let intro = "⚠ There are changes which are not documented:"
+
+let report_file ?with_link fmt (p, deps) =
+  let open Format in
+  match deps with
+  | [] -> ()
+  | deps ->
+      fprintf fmt "  * <details><summary markdown=\"span\">%s</summary>\n\n" p;
+      List.iter
+        (fun entry ->
+          pp_print_string fmt "    * ";
+          Entry.pp_markdown fmt ?with_link entry;
+          pp_print_string fmt "\n")
+        deps;
+      pp_print_string fmt "\n"
+
+let report fmt entries =
   List.iter
     (fun (p, deps) ->
       Format.(
@@ -94,6 +102,33 @@ let report_full fmt ~clickable ?git h entries =
             deps)))
     entries
 
+(** [report_markdown ~clickable fmt git hash entries] creates a report for
+    [entries] in a markdown format. It list every unducommented entry found in
+    [entries] with a clickable link (iff [clickable] is true) to the line in
+    question. *)
+let report_markdown ~clickable fmt git hash entries =
+  let ( >>= ) = Option.bind in
+  let Git.(Hash hash) = hash in
+  let with_link =
+    (if clickable then git else None) >>= fun git -> link_prefix git hash
+  in
+  let open Format in
+  fprintf fmt "<details><summary markdown=\"span\">%s</summary>\n\n" intro;
+  List.iter (report_file ?with_link fmt) entries;
+  pp_print_string fmt "</details>\n"
+
+let report_full ~markdown ~clickable ?output ?git hash entries =
+  (* Finally, we print the undocumentend entries found *)
+  let fmt =
+    Option.fold ~none:Format.std_formatter
+      ~some:(fun file ->
+        let oc = open_out file in
+        Format.formatter_of_out_channel oc)
+      output
+  in
+  if markdown then report_markdown ~clickable fmt git hash entries
+  else report fmt entries
+
 let get_repo = function
   | `Git (git, branch) -> Git.clone_repository ?branch git
   | `Path path -> Git.open_repository ~path ()
@@ -102,8 +137,8 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr ?output ?git ~clickable r h exclude_files exclude_re : unit mresult
-    =
+let check_mr ?output ?git ~clickable ~markdown r h exclude_files exclude_re :
+    unit mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
   let changes =
@@ -130,32 +165,26 @@ let check_mr ?output ?git ~clickable r h exclude_files exclude_re : unit mresult
     conciliate_undocumented_all before_undoc after_undoc changes
   in
 
-  (* Finally, we print the undocumentend entries found *)
-  let fmt =
-    Option.fold ~none:Format.std_formatter
-      ~some:(fun file ->
-        let oc = open_out file in
-        Format.formatter_of_out_channel oc)
-      output
-  in
-
   return
-  @@ report_full fmt ~clickable ?git (Option.get !last_commit)
+  @@ report_full ?output ~clickable ~markdown ?git (Option.get !last_commit)
        undocumented_entries
 
 let opt_string = function "" -> None | x -> Some x
 
-let check_clone git branch commit exclude_files exclude_re output clickable =
+let check_clone git branch commit exclude_files exclude_re output clickable
+    markdown =
   let output = opt_string output in
   run
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
      get_hash repo commit >>= fun hash ->
-     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable)
+     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable
+       ~markdown)
 
-let check path commit exclude_files exclude_re output =
+let check path commit exclude_files exclude_re output markdown =
   let output = opt_string output in
   run
     ( get_repo (`Path path) >>= fun repo ->
       get_hash repo commit >>= fun hash ->
-      check_mr repo hash exclude_files exclude_re ?output ~clickable:false )
+      check_mr repo hash exclude_files exclude_re ?output ~clickable:false
+        ~markdown )

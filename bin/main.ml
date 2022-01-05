@@ -20,6 +20,10 @@ let output =
   let doc = "Output report to $(i,PATH)" in
   Arg.(value & opt string "" & info [ "o"; "output" ] ~doc ~docv:"OUTPUT")
 
+let markdown =
+  let doc = "Output in a markdown format" in
+  Arg.(value & flag & info [ "markdown" ] ~doc ~docv:"MARKDOWN")
+
 module Check = struct
   let doc =
     "Check undocument function between current head and last merge commit."
@@ -38,7 +42,9 @@ module Check = struct
       let doc = "Git project path." in
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
-    ( Term.(const check $ path $ commit $ exclude_files $ exclude_re $ output),
+    ( Term.(
+        const check $ path $ commit $ exclude_files $ exclude_re $ output
+        $ markdown),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -53,7 +59,7 @@ module Check = struct
     in
     ( Term.(
         const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output $ clickable),
+        $ output $ clickable $ markdown),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]
