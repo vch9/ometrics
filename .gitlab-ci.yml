@@ -1,12 +1,31 @@
 image: ocaml/opam
 
 stages:
+  - build
   - test
 
-test:
+build:
+  stage: build
   script:
     - git submodule update --init
+    - rm -rf _opam
     - opam switch create . 4.12.0 --with-test --yes
+    - opam install dot-merlin-reader
     - eval $(opam env)
-    - dune build
-    - dune runtest
+    - make build
+  artifacts:
+    paths:
+      - _opam/
+      - _build/
+      - vendor/
+    expire_in: 1 day
+    when: on_success
+  cache:
+    paths:
+      - _opam/
+
+test:
+  stage: test
+  script:
+    - eval $(opam env)
+    - make test
