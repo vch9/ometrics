@@ -24,6 +24,14 @@ let markdown =
   let doc = "Output in a markdown format" in
   Arg.(value & flag & info [ "markdown" ] ~doc ~docv:"MARKDOWN")
 
+let html =
+  let doc = "Output in a html format" in
+  Arg.(value & flag & info [ "html" ] ~doc ~docv:"HTML")
+
+let title =
+  let doc = "Merge request title" in
+  Arg.(value & opt string "" & info [ "t"; "title" ] ~doc ~docv:"TITLE")
+
 module Check = struct
   let doc =
     "Check undocument function between current head and last merge commit."
@@ -44,7 +52,7 @@ module Check = struct
     in
     ( Term.(
         const check $ path $ commit $ exclude_files $ exclude_re $ output
-        $ markdown),
+        $ markdown $ html),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -59,7 +67,7 @@ module Check = struct
     in
     ( Term.(
         const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output $ clickable $ markdown),
+        $ output $ clickable $ markdown $ html $ title),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]

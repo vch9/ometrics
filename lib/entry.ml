@@ -43,3 +43,15 @@ let pp_markdown ?with_link fmt
         sprintf "[`%s`](%s%s#%d)" entry_name prefix entry_file entry_line
   in
   fprintf fmt "`%a`: %s" pp_kind entry_kind name
+
+let pp_html ?with_link fmt { entry_kind; entry_name; entry_line; entry_file; _ }
+    =
+  let open Format in
+  let name =
+    match with_link with
+    | None -> entry_name
+    | Some prefix ->
+        sprintf "<a href=\"%s%s#%d\">%s</a>" prefix entry_file entry_line
+          entry_name
+  in
+  fprintf fmt "%a: %s" pp_kind entry_kind name
