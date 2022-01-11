@@ -94,5 +94,5 @@ GitLab code quality:
           "begin": 1
         }
       }
-    },
+    }
   ]

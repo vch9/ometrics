@@ -94,7 +94,8 @@ let report fmt entries =
 
 (** {2. GitLab } *)
 
-let pp_gitlab_entry fmt path Entry.{ entry_name; entry_line; _ } =
+let pp_gitlab_entry ?(comma = false) fmt path
+    Entry.{ entry_name; entry_line; _ } =
   let entry_name =
     if String.contains entry_name '.' then
       let x = Filename.extension entry_name in
@@ -114,14 +115,23 @@ let pp_gitlab_entry fmt path Entry.{ entry_name; entry_line; _ } =
         "begin": %d
       }
     }
-  },
+  }%s
 |}
     entry_name path entry_line
+    (if comma then "," else "")
 
 let report_gitlab fmt entries =
   let open Format in
+  let rec aux fmt xs =
+    match xs with
+    | [ (p, deps) ] -> List.iter (pp_gitlab_entry fmt p) deps
+    | (p, deps) :: xs ->
+        List.iter (pp_gitlab_entry ~comma:true fmt p) deps;
+        aux fmt xs
+    | [] -> assert false
+  in
   pp_print_string fmt "[";
-  List.iter (fun (p, deps) -> List.iter (pp_gitlab_entry fmt p) deps) entries;
+  aux fmt entries;
   pp_print_string fmt "]"
 
 (** {2. Entrypoint} *)
