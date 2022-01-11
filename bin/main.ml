@@ -28,6 +28,10 @@ let html =
   let doc = "Output in a html format" in
   Arg.(value & flag & info [ "html" ] ~doc ~docv:"HTML")
 
+let gitlab =
+  let doc = "Output in GitLab code quality report" in
+  Arg.(value & flag & info [ "gitlab" ] ~doc ~docv:"GITLAB")
+
 let title =
   let doc = "Merge request title" in
   Arg.(value & opt string "" & info [ "t"; "title" ] ~doc ~docv:"TITLE")
@@ -52,7 +56,7 @@ module Check = struct
     in
     ( Term.(
         const check $ path $ commit $ exclude_files $ exclude_re $ output
-        $ markdown $ html),
+        $ markdown $ html $ gitlab),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -67,7 +71,7 @@ module Check = struct
     in
     ( Term.(
         const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output $ clickable $ markdown $ html $ title),
+        $ output $ clickable $ markdown $ html $ gitlab $ title),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]

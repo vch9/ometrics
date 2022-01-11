@@ -54,8 +54,8 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr ?output ?git ?title ~clickable ~markdown ~html r h exclude_files
-    exclude_re : unit mresult =
+let check_mr ?output ?git ?title ~clickable ~format r h exclude_files exclude_re
+    : unit mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
   let changes =
@@ -84,26 +84,34 @@ let check_mr ?output ?git ?title ~clickable ~markdown ~html r h exclude_files
   in
 
   return
-  @@ report_full ?output ?title ~clickable ~markdown ~html ?git
+  @@ report_full ?output ?title ~clickable ~format ?git
        (Option.get !last_commit) entries
 
 let opt_string = function "" -> None | x -> Some x
 
+let format markdown html gitlab =
+  if markdown then `Markdown
+  else if html then `Html
+  else if gitlab then `Gitlab
+  else `Classic
+
 let check_clone git branch commit exclude_files exclude_re output clickable
-    markdown html title =
+    markdown html gitlab title =
   let output = opt_string output in
   let title = opt_string title in
+  let format = format markdown html gitlab in
   run
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
      get_hash repo commit >>= fun hash ->
-     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable
-       ~markdown ~html ?title)
+     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable ~format
+       ?title)
 
-let check path commit exclude_files exclude_re output markdown html =
+let check path commit exclude_files exclude_re output markdown html gitlab =
   let output = opt_string output in
+  let format = format markdown html gitlab in
   run
     ( get_repo (`Path path) >>= fun repo ->
       get_hash repo commit >>= fun hash ->
       check_mr repo hash exclude_files exclude_re ?output ~clickable:false
-        ~markdown ~html )
+        ~format )
