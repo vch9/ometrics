@@ -119,15 +119,6 @@ let pp_gitlab_entry fmt path Entry.{ entry_name; entry_line; _ } =
     entry_name path entry_line
 
 let report_gitlab fmt entries =
-  let entries =
-    List.filter_map
-      (fun (p, deps) ->
-        let deps = List.filter (fun x -> not (Entry.is_documented x)) deps in
-        match deps with [] -> None | deps -> Some (p, deps))
-      entries
-  in
-  (* Should it be enforced here? *)
-  assert (List.length entries > 0);
   let open Format in
   pp_print_string fmt "[";
   List.iter (fun (p, deps) -> List.iter (pp_gitlab_entry fmt p) deps) entries;
@@ -136,16 +127,25 @@ let report_gitlab fmt entries =
 (** {2. Entrypoint} *)
 
 let report_full ~format ~clickable ?title ?output ?git hash entries =
-  (* Finally, we print the undocumented entries found *)
-  let fmt =
-    Option.fold ~none:Format.std_formatter
-      ~some:(fun file ->
-        let oc = open_out file in
-        Format.formatter_of_out_channel oc)
-      output
+  let entries =
+    List.filter_map
+      (fun (p, deps) ->
+        let deps = List.filter (fun x -> not (Entry.is_documented x)) deps in
+        match deps with [] -> None | deps -> Some (p, deps))
+      entries
   in
-  match format with
-  | `Markdown -> report_markdown ~clickable fmt git hash entries
-  | `Html -> report_html ~clickable ?title fmt git hash entries
-  | `Gitlab -> report_gitlab fmt entries
-  | `Classic -> report fmt entries
+  match entries with
+  | [] -> ()
+  | _ -> (
+      let fmt =
+        Option.fold ~none:Format.std_formatter
+          ~some:(fun file ->
+            let oc = open_out file in
+            Format.formatter_of_out_channel oc)
+          output
+      in
+      match format with
+      | `Markdown -> report_markdown ~clickable fmt git hash entries
+      | `Html -> report_html ~clickable ?title fmt git hash entries
+      | `Gitlab -> report_gitlab fmt entries
+      | `Classic -> report fmt entries)
