@@ -1,12 +1,17 @@
 opam-version: "2.0"
 version: "dev"
-maintainer: "Thomas Letan <lthms@nomadic-labs.com>"
+maintainer: "Valentin Chaboche <valentin.chaboche@lambda-coins.com>"
+homepage: "https://gitlab.com/nomadic-labs/ometrics"
+bug-reports: "https://gitlab.com/nomadic-labs/ometrics/-/issues"
+synopsis: "OCaml analysis in a merge request changes"
+            
 depends: [
   "ocaml" {>= "4.12" & < "4.13"}
   "yojson"
   "menhirSdk" {>= "20211012" & < "20211013"}
   "menhirLib" {>= "20211012" & < "20211013"}
   "menhir" {>= "20211012" & < "20211013"}
+  "dot-merlin-reader"
   "csexp"
   "result"
   "cmdliner"
@@ -18,4 +23,5 @@ build: [
 ]
 authors: [
   "Thomas Letan <lthms@nomadic-labs.com>"
+  "Valentin Chaboche <valentin.chaboche@lambda-coins.com>"
 ]
