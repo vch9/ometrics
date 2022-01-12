@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "dev"
+version: "0.1"
 maintainer: "Valentin Chaboche <valentin.chaboche@lambda-coins.com>"
 homepage: "https://gitlab.com/nomadic-labs/ometrics"
 bug-reports: "https://gitlab.com/nomadic-labs/ometrics/-/issues"
