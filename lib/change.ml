@@ -58,7 +58,9 @@ let is_excluded exclude_files exclude_re : change -> bool =
   let is_excluded_files ch =
     List.exists (fun ef -> is_excluded_files ef ch) exclude_files
   in
-  let is_excluded_re = is_excluded_re exclude_re in
+  let is_excluded_re x =
+    List.exists (fun re -> is_excluded_re re x) exclude_re
+  in
   match ch with
   | Addition path | Edition path | Renaming (_, path) ->
       is_excluded_files path || is_excluded_re path

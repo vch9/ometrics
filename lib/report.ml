@@ -106,13 +106,8 @@ let report fmt entries =
 
 let pp_gitlab_entry ?(comma = false) fmt path
     Entry.{ entry_name; entry_line; _ } =
-  let entry_name =
-    if String.contains entry_name '.' then
-      let x = Filename.extension entry_name in
-      let n = String.length x in
-      String.sub x 1 (n - 1)
-    else entry_name
-  in
+  let entry_name = Entry.base_entry_name entry_name in
+
   Format.fprintf fmt
     {|
   {
@@ -132,19 +127,25 @@ let pp_gitlab_entry ?(comma = false) fmt path
 
 let report_gitlab fmt entries =
   let open Format in
-  match entries with
+  let flat_entries =
+    List.fold_left
+      (fun acc (p, deps) -> List.map (fun dep -> (p, dep)) deps @ acc)
+      [] entries
+  in
+
+  match flat_entries with
   | [] -> pp_print_string fmt "[]"
-  | entries ->
+  | _ ->
       let rec aux fmt xs =
         match xs with
-        | [ (p, deps) ] -> List.iter (pp_gitlab_entry fmt p) deps
-        | (p, deps) :: xs ->
-            List.iter (pp_gitlab_entry ~comma:true fmt p) deps;
+        | [ (p, dep) ] -> pp_gitlab_entry fmt p dep
+        | (p, dep) :: xs ->
+            pp_gitlab_entry ~comma:true fmt p dep;
             aux fmt xs
         | [] -> assert false
       in
       pp_print_string fmt "[";
-      aux fmt entries;
+      aux fmt flat_entries;
       pp_print_string fmt "]"
 
 (** {2. Entrypoint} *)
