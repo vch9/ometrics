@@ -1,5 +1,6 @@
 open Change
 open Monad
+open Report
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
     "target.ml" otherwise. *)
@@ -7,11 +8,10 @@ let choose_file target =
   let mli_target = target ^ "i" in
   if Sys.file_exists mli_target then mli_target else target
 
-let find_undocumented_entries path =
+let find_entries path =
   choose_file path |> Toplevel.to_entries |> List.sort compare
-  |> List.filter Entry.is_not_documented
 
-(** [conciliate before after] removes undocumented entry that appears in both
+(** [conciliate before after] removes entry that appears in both
     [before] and [after]. *)
 let rec conciliate (before : Entry.t list) (after : Entry.t list) : Entry.t list
     =
@@ -23,14 +23,9 @@ let rec conciliate (before : Entry.t list) (after : Entry.t list) : Entry.t list
       | _ -> conciliate rstb after)
   | _, rsta -> rsta
 
-(** [conciliate_undocumented before after changes] retrives undocumented entries in after
-    based on [changes] and [before].
-
-    e.g.
-    - if value "x" was undocumented before and the file has been edited and it is still
-    not documented, we ignore the value.
-*)
-let conciliate_undocumented before after = function
+(** [conciliate before after changes] retrives entries in after
+    based on [changes] and [before]. *)
+let conciliate before after = function
   | Addition path -> (path, List.assoc path after)
   | Edition path ->
       (path, conciliate (List.assoc path before) (List.assoc path after))
@@ -38,61 +33,18 @@ let conciliate_undocumented before after = function
       (path', conciliate (List.assoc path before) (List.assoc path' after))
   | _ -> assert false
 
-(** [filter_duplicate_undocumented l] removes implementation files when
+(** [filter_duplicate l] removes implementation files when
     the interface is present. The implementation file (.ml) must be _before_
     the interface one (.mli). *)
-let rec filter_duplicate_undocumented = function
+let rec filter_duplicate = function
   | (path, _) :: (path', undoc) :: rst when String.equal path (path' ^ "i") ->
-      (path, undoc) :: filter_duplicate_undocumented rst
-  | (path, undoc) :: rst ->
-      (choose_file path, undoc) :: filter_duplicate_undocumented rst
+      (path, undoc) :: filter_duplicate rst
+  | (path, undoc) :: rst -> (choose_file path, undoc) :: filter_duplicate rst
   | [] -> []
 
-let conciliate_undocumented_all before after chs =
-  List.map (conciliate_undocumented before after) chs
-  |> filter_duplicate_undocumented
+let conciliate_all before after chs = List.map (conciliate before after) chs
 
 (** {2. Check } *)
-
-(** [link_prefix git hash] computes the link prefix based on [git] and [hash].
-
-    Example:
-    link_prefix "https://gitlab.com/nomadic-labs/tezos.git" "your_hash" it creates:
-    https://gitlab.com/nomadic-labs/tezos/-/tree/your_hash
-*)
-let link_prefix git hash =
-  let is_gitlab =
-    let re =
-      Str.regexp "https:\\/\\/gitlab\\.com\\/\\(.+\\)\\/\\(.+\\)\\.git"
-    in
-    Str.string_match re git 0
-  in
-  if is_gitlab then
-    let group = Str.matched_group 1 git in
-    let project = Str.matched_group 2 git in
-    Some
-      (Printf.sprintf "https://gitlab.com/%s/%s/-/tree/%s/" group project hash)
-  else None
-
-(** [report_full entries] creates a full report for [entries]. It list
-    every unducommented entry found in [entries] with a clickable link
-    to the line in question. In a markdown format. *)
-let report_full fmt ~clickable ?git h entries =
-  let ( >>= ) = Option.bind in
-  let Git.(Hash h) = h in
-  let with_link =
-    (if clickable then git else None) >>= fun git -> link_prefix git h
-  in
-  List.iter
-    (fun (p, deps) ->
-      Format.(
-        if 0 < List.length deps then (
-          fprintf fmt "@[<v># `%s`@ @ @]" p;
-          fprintf fmt "@[<v>%a@ @ @]"
-            (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false ?with_link) e))
-            deps)))
-    entries
 
 let get_repo = function
   | `Git (git, branch) -> Git.clone_repository ?branch git
@@ -102,8 +54,8 @@ let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
   | s -> return (Git.hash_from_string s)
 
-let check_mr ?output ?git ~clickable r h exclude_files exclude_re : unit mresult
-    =
+let check_mr ?output ?git ?title ~clickable ~format r h exclude_files exclude_re
+    : unit mresult =
   (* We fetch every changes since [h] in term of files *)
   Git.get_changes r ~since:h >>= fun changes ->
   let changes =
@@ -115,47 +67,51 @@ let check_mr ?output ?git ~clickable r h exclude_files exclude_re : unit mresult
   let before, after = Change.files_to_analyze changes in
   let last_commit = ref None in
 
-  (* We look for undocumented entries in files before the changes *)
+  (* We look for entries in files before the changes *)
   Git.with_tmp_clone r ~hash:h (fun _r ->
-      return @@ List.map (fun p -> (p, find_undocumented_entries p)) before)
+      return @@ List.map (fun p -> (p, find_entries p)) before)
   >>= fun before_undoc ->
-  (* We look for undocumented entries in files after the changes *)
+  (* We look for entries in files after the changes *)
   Git.with_tmp_clone r (fun r ->
       Git.find_last_commit r >>= fun hash ->
       last_commit := Some hash;
-      return @@ List.map (fun p -> (p, find_undocumented_entries p)) after)
+      return @@ List.map (fun p -> (p, find_entries p)) after)
   >>= fun after_undoc ->
-  (* We remove undocumented entries if they were also undocumented before *)
-  let undocumented_entries =
-    conciliate_undocumented_all before_undoc after_undoc changes
-  in
-
-  (* Finally, we print the undocumentend entries found *)
-  let fmt =
-    Option.fold ~none:Format.std_formatter
-      ~some:(fun file ->
-        let oc = open_out file in
-        Format.formatter_of_out_channel oc)
-      output
+  (* We remove entries if they were also undocumented before *)
+  let entries =
+    conciliate_all before_undoc after_undoc changes
+    |> List.filter (fun (_, deps) -> List.length deps > 0)
   in
 
   return
-  @@ report_full fmt ~clickable ?git (Option.get !last_commit)
-       undocumented_entries
+  @@ report_full ?output ?title ~clickable ~format ?git
+       (Option.get !last_commit) entries
 
 let opt_string = function "" -> None | x -> Some x
 
-let check_clone git branch commit exclude_files exclude_re output clickable =
+let format markdown html gitlab =
+  if markdown then `Markdown
+  else if html then `Html
+  else if gitlab then `Gitlab
+  else `Classic
+
+let check_clone git branch commit exclude_files exclude_re output clickable
+    markdown html gitlab title =
   let output = opt_string output in
+  let title = opt_string title in
+  let format = format markdown html gitlab in
   run
     (let branch = match branch with "" -> None | x -> Some x in
      get_repo @@ `Git (git, branch) >>= fun repo ->
      get_hash repo commit >>= fun hash ->
-     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable)
+     check_mr ~git repo hash exclude_files exclude_re ?output ~clickable ~format
+       ?title)
 
-let check path commit exclude_files exclude_re output =
+let check path commit exclude_files exclude_re output markdown html gitlab =
   let output = opt_string output in
+  let format = format markdown html gitlab in
   run
     ( get_repo (`Path path) >>= fun repo ->
       get_hash repo commit >>= fun hash ->
-      check_mr repo hash exclude_files exclude_re ?output ~clickable:false )
+      check_mr repo hash exclude_files exclude_re ?output ~clickable:false
+        ~format )
