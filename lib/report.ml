@@ -1,3 +1,5 @@
+let default_msg = "ometrics has not found undocumented entries in your changes."
+
 (** [link_prefix git hash] computes the link prefix based on [git] and [hash].
 
     Example:
@@ -42,11 +44,14 @@ let report_file_markdown ?with_link fmt (p, deps) =
 
 let report_markdown ~clickable fmt git hash entries =
   let open Format in
-  let Git.(Hash hash) = hash in
-  let with_link = with_link clickable git hash in
-  fprintf fmt "<details><summary markdown=\"span\">%s</summary>\n\n" intro;
-  List.iter (report_file_markdown ?with_link fmt) entries;
-  pp_print_string fmt "</details>\n"
+  match entries with
+  | [] -> pp_print_string fmt default_msg
+  | entries ->
+      let Git.(Hash hash) = hash in
+      let with_link = with_link clickable git hash in
+      fprintf fmt "<details><summary markdown=\"span\">%s</summary>\n\n" intro;
+      List.iter (report_file_markdown ?with_link fmt) entries;
+      pp_print_string fmt "</details>\n"
 
 (** {2. HTML} *)
 
@@ -74,23 +79,28 @@ let report_html ~clickable ?title fmt git hash entries =
   <h2>%s</h2>
 |}
     (Option.value ~default:hash title)
-    (Format.sprintf "Undocumented entries introduced since %s" hash);
+    (match entries with
+    | [] -> default_msg
+    | _ -> Format.sprintf "Undocumented entries introduced since %s" hash);
   List.iter (pp_file_html fmt ?with_link) entries;
   pp_print_string fmt "<body>\n</html>\n"
 
 (** {2. Classic} *)
 
 let report fmt entries =
-  List.iter
-    (fun (p, deps) ->
-      Format.(
-        if 0 < List.length deps then (
-          fprintf fmt "@[<v># `%s`@ @ @]" p;
-          fprintf fmt "@[<v>%a@ @ @]"
-            (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                 fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
-            deps)))
-    entries
+  match entries with
+  | [] -> Format.pp_print_string fmt default_msg
+  | entries ->
+      List.iter
+        (fun (p, deps) ->
+          Format.(
+            if 0 < List.length deps then (
+              fprintf fmt "@[<v># `%s`@ @ @]" p;
+              fprintf fmt "@[<v>%a@ @ @]"
+                (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
+                     fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
+                deps)))
+        entries
 
 (** {2. GitLab } *)
 
@@ -122,21 +132,31 @@ let pp_gitlab_entry ?(comma = false) fmt path
 
 let report_gitlab fmt entries =
   let open Format in
-  let rec aux fmt xs =
-    match xs with
-    | [ (p, deps) ] -> List.iter (pp_gitlab_entry fmt p) deps
-    | (p, deps) :: xs ->
-        List.iter (pp_gitlab_entry ~comma:true fmt p) deps;
-        aux fmt xs
-    | [] -> assert false
-  in
-  pp_print_string fmt "[";
-  aux fmt entries;
-  pp_print_string fmt "]"
+  match entries with
+  | [] -> pp_print_string fmt "[]"
+  | entries ->
+      let rec aux fmt xs =
+        match xs with
+        | [ (p, deps) ] -> List.iter (pp_gitlab_entry fmt p) deps
+        | (p, deps) :: xs ->
+            List.iter (pp_gitlab_entry ~comma:true fmt p) deps;
+            aux fmt xs
+        | [] -> assert false
+      in
+      pp_print_string fmt "[";
+      aux fmt entries;
+      pp_print_string fmt "]"
 
 (** {2. Entrypoint} *)
 
 let report_full ~format ~clickable ?title ?output ?git hash entries =
+  let fmt =
+    match output with
+    | None -> Format.std_formatter
+    | Some file ->
+        let oc = open_out file in
+        Format.formatter_of_out_channel oc
+  in
   let entries =
     List.filter_map
       (fun (p, deps) ->
@@ -144,18 +164,8 @@ let report_full ~format ~clickable ?title ?output ?git hash entries =
         match deps with [] -> None | deps -> Some (p, deps))
       entries
   in
-  match entries with
-  | [] -> ()
-  | _ -> (
-      let fmt =
-        Option.fold ~none:Format.std_formatter
-          ~some:(fun file ->
-            let oc = open_out file in
-            Format.formatter_of_out_channel oc)
-          output
-      in
-      match format with
-      | `Markdown -> report_markdown ~clickable fmt git hash entries
-      | `Html -> report_html ~clickable ?title fmt git hash entries
-      | `Gitlab -> report_gitlab fmt entries
-      | `Classic -> report fmt entries)
+  match format with
+  | `Markdown -> report_markdown ~clickable fmt git hash entries
+  | `Html -> report_html ~clickable ?title fmt git hash entries
+  | `Gitlab -> report_gitlab fmt entries
+  | `Classic -> report fmt entries
