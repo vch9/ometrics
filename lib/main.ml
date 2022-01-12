@@ -34,15 +34,16 @@ let conciliate before after = function
   | _ -> assert false
 
 (** [filter_duplicate l] removes implementation files when
-    the interface is present. The implementation file (.ml) must be _before_
-    the interface one (.mli). *)
-let rec filter_duplicate = function
-  | (path, _) :: (path', undoc) :: rst when String.equal path (path' ^ "i") ->
-      (path, undoc) :: filter_duplicate rst
-  | (path, undoc) :: rst -> (choose_file path, undoc) :: filter_duplicate rst
-  | [] -> []
+    the interface is present. *)
+let filter_duplicate xs =
+  List.filter
+    (fun (path, _) ->
+      Change.is_ml_file path
+      && not (List.exists (fun (path', _) -> path' = path ^ "i") xs))
+    xs
 
-let conciliate_all before after chs = List.map (conciliate before after) chs
+let conciliate_all before after chs =
+  List.map (conciliate before after) chs |> filter_duplicate
 
 (** {2. Check } *)
 

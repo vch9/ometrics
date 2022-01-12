@@ -12,6 +12,7 @@ type changes = change list
 
 val change_from_string : string -> change
 val is_ml_change : change -> bool
+val is_ml_file : string -> bool
 val is_excluded : string list -> string list -> change -> bool
 
 val files_to_analyze : changes -> string list * string list
