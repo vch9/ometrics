@@ -61,11 +61,11 @@ GitLab code quality:
   $ ometrics check-clone https://gitlab.com/vch9/ometrics-test.git --branch src-and-test --hash f9b705455789adea9258379e8e3113a61eda0ec8 --gitlab
   [
     {
-      "description" : "'tezt' is not documented.",
+      "description" : "'sum' is not documented.",
       "fingerprint" : "",
       "severity": "minor",
       "location": {
-        "path": "tezt/foo.ml",
+        "path": "src/main.ml",
         "lines": {
           "begin": 1
         }
@@ -85,11 +85,11 @@ GitLab code quality:
     },
   
     {
-      "description" : "'sum' is not documented.",
+      "description" : "'tezt' is not documented.",
       "fingerprint" : "",
       "severity": "minor",
       "location": {
-        "path": "src/main.ml",
+        "path": "tezt/foo.ml",
         "lines": {
           "begin": 1
         }
