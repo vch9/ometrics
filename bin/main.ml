@@ -10,11 +10,15 @@ let exclude_files =
     \    If $(i,PATH) ends with a path separator, it is treated as a directory \
      name."
   in
-  Arg.(value & opt_all string [] & info [ "e"; "exclude" ] ~doc ~docv:"PATH")
+  Arg.(value & opt_all string [] & info [ "exclude-file" ] ~doc ~docv:"PATH")
 
-let exclude_re =
+let exclude_file_re =
   let doc = "Exclude files matching RE from the merge request's analysis." in
-  Arg.(value & opt string "" & info [ "e-re"; "exclude-re" ] ~doc ~docv:"RE")
+  Arg.(value & opt_all string [] & info [ "exclude-file-re" ] ~doc ~docv:"RE")
+
+let exclude_entry_re =
+  let doc = "Exclude entries matching RE from the merge request's analysis." in
+  Arg.(value & opt_all string [] & info [ "exclude-entry-re" ] ~doc ~docv:"RE")
 
 let output =
   let doc = "Output report to $(i,PATH)" in
@@ -55,8 +59,8 @@ module Check = struct
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
     ( Term.(
-        const check $ path $ commit $ exclude_files $ exclude_re $ output
-        $ markdown $ html $ gitlab),
+        const check $ path $ commit $ exclude_files $ exclude_file_re
+        $ exclude_entry_re $ output $ markdown $ html $ gitlab),
       Term.info "check" ~version ~doc ~exits )
 
   let check_clone =
@@ -70,8 +74,9 @@ module Check = struct
       Arg.(value & opt string "" & info [ "b"; "branch" ] ~doc ~docv:"BRANCH")
     in
     ( Term.(
-        const check_clone $ git $ branch $ commit $ exclude_files $ exclude_re
-        $ output $ clickable $ markdown $ html $ gitlab $ title),
+        const check_clone $ git $ branch $ commit $ exclude_files
+        $ exclude_file_re $ exclude_entry_re $ output $ clickable $ markdown
+        $ html $ gitlab $ title),
       Term.info "check-clone" ~version ~doc ~exits )
 
   let cmds = [ check_open; check_clone ]

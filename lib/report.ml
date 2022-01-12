@@ -106,13 +106,8 @@ let report fmt entries =
 
 let pp_gitlab_entry ?(comma = false) fmt path
     Entry.{ entry_name; entry_line; _ } =
-  let entry_name =
-    if String.contains entry_name '.' then
-      let x = Filename.extension entry_name in
-      let n = String.length x in
-      String.sub x 1 (n - 1)
-    else entry_name
-  in
+  let entry_name = Entry.base_entry_name entry_name in
+
   Format.fprintf fmt
     {|
   {
