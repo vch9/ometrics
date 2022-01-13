@@ -165,8 +165,11 @@ let report_full ~format ~clickable ?title ?output ?git hash entries =
         match deps with [] -> None | deps -> Some (p, deps))
       entries
   in
-  match format with
-  | `Markdown -> report_markdown ~clickable fmt git hash entries
-  | `Html -> report_html ~clickable ?title fmt git hash entries
-  | `Gitlab -> report_gitlab fmt entries
-  | `Classic -> report fmt entries
+  let () =
+    match format with
+    | `Markdown -> report_markdown ~clickable fmt git hash entries
+    | `Html -> report_html ~clickable ?title fmt git hash entries
+    | `Gitlab -> report_gitlab fmt entries
+    | `Classic -> report fmt entries
+  in
+  Format.pp_print_flush fmt ()
