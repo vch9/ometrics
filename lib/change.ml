@@ -41,7 +41,7 @@ let is_excluded_files path : string -> bool =
   let is_dir = String.get path (String.length path - 1) = '/' in
   if is_dir then
     let dir = String.sub path 0 (String.length path - 1) in
-    String.length path >= String.length dir
+    String.length change >= String.length dir
     && dir = String.sub change 0 (String.length dir)
   else path = change
 
