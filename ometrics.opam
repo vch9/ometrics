@@ -25,7 +25,7 @@ conflicts: [
   "menhir"
 ]
 build: [
-  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "build" "--release" "-j" jobs]
 ]
 authors: [
   "Thomas Letan <lthms@nomadic-labs.com>"
