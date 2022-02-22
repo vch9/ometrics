@@ -1,3 +1,8 @@
+## 0.1.2
+
+### Fixes
+- Add fingerprints in GitLab format
+
 ## 0.1.1
 
 ### Fixes
