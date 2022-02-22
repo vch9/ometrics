@@ -108,11 +108,18 @@ let pp_gitlab_entry ?(comma = false) fmt path
     Entry.{ entry_name; entry_line; _ } =
   let entry_name = Entry.base_entry_name entry_name in
 
+  let hash =
+    let ctx = Digestif.SHA256.empty in
+    let bytes = Marshal.to_bytes (entry_name, path, entry_line) [] in
+    let ctx = Digestif.SHA256.feed_bytes ctx bytes in
+    Digestif.SHA256.get ctx
+  in
+
   Format.fprintf fmt
     {|
   {
     "description" : "'%s' is not documented.",
-    "fingerprint" : "",
+    "fingerprint" : "%a",
     "severity": "minor",
     "location": {
       "path": "%s",
@@ -122,7 +129,7 @@ let pp_gitlab_entry ?(comma = false) fmt path
     }
   }%s
 |}
-    entry_name path entry_line
+    entry_name Digestif.SHA256.pp hash path entry_line
     (if comma then "," else "")
 
 let report_gitlab fmt entries =

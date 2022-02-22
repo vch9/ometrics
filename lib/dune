@@ -1,5 +1,5 @@
 (library
  (name ometrics)
- (libraries unix str merlin.kernel merlin.analysis)
+ (libraries unix str merlin.kernel merlin.analysis digestif)
  (instrumentation
   (backend bisect_ppx)))
