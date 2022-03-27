@@ -23,11 +23,13 @@ let run_lines : string -> string list mresult =
  fun cmd ->
   let open Unix in
   let ((out, _, err) as ch) = open_process_full cmd [||] in
+  let lines_out = read_lines out in
+  let lines_err = read_lines err in
   let _, c = waitpid [] (process_full_pid ch) in
-  if c = WEXITED 0 then return (read_lines out)
+  if c = WEXITED 0 then return lines_out
   else (
     Debug.dbg "Error on %s" cmd;
-    let msg = read_lines err |> String.concat "\n" in
+    let msg = lines_err |> String.concat "\n" in
     Debug.dbg "Error: %s" msg;
     fail (__LOC__, status_msg cmd c))
 
