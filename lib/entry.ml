@@ -57,11 +57,12 @@ let pp_html ?with_link fmt { entry_kind; entry_name; entry_line; entry_file; _ }
   fprintf fmt "%a: %s" pp_kind entry_kind name
 
 let base_entry_name entry_name =
-  if String.contains entry_name '.' then
-    let x = Filename.extension entry_name in
-    let n = String.length x in
-    String.sub x 1 (n - 1)
-  else entry_name
+  let l = String.split_on_char '.' entry_name in
+  match l with
+  | [ x ] -> x
+  | xs -> (
+      let n = List.length xs in
+      match List.nth_opt xs (n - 1) with Some x -> x | None -> entry_name)
 
 let is_excluded_entry_re { entry_name; _ } re =
   let x = base_entry_name entry_name in
