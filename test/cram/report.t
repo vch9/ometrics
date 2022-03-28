@@ -62,7 +62,7 @@ GitLab code quality:
   [
     {
       "description" : "'sum' is not documented.",
-      "fingerprint" : "",
+      "fingerprint" : "d678f950b4b5b189a89636053df4fa16f5fb3a22266a28c0687819d574c33e22",
       "severity": "minor",
       "location": {
         "path": "src/main.ml",
@@ -74,7 +74,7 @@ GitLab code quality:
   
     {
       "description" : "'test_sum' is not documented.",
-      "fingerprint" : "",
+      "fingerprint" : "846135fc872acb14faa36aca7172e782215fe0c69a9aa956e822ee6f33e2c42b",
       "severity": "minor",
       "location": {
         "path": "src/test/test_main.ml",
@@ -86,7 +86,7 @@ GitLab code quality:
   
     {
       "description" : "'tezt' is not documented.",
-      "fingerprint" : "",
+      "fingerprint" : "3710c4c6e29f28a3369c496b14a288924d9a8490a40bef851528ae20e3d313f4",
       "severity": "minor",
       "location": {
         "path": "tezt/foo.ml",
