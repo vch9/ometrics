@@ -10,7 +10,6 @@ build:
     - git submodule update --init
     - rm -rf _opam
     - opam switch create . 4.12.0 --with-test --yes
-    - opam install dot-merlin-reader
     - eval $(opam env)
     - make build
   artifacts:
