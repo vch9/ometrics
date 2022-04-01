@@ -1,7 +1,6 @@
 module Git = Ometrics__Git
 module Change = Ometrics__Change
 open Git
-open Ometrics__Monad
 
 let pp_repo fmt (Repo x) = Format.fprintf fmt "Report %s" x
 let eq_repo = Alcotest.of_pp pp_repo
@@ -15,19 +14,25 @@ let name_project repo =
 
 let open_current_repo () =
   let expected = "ometrics" in
-  let (Repo actual) = run_dry @@ open_repository () |> Option.get in
+  let (Repo actual) = open_repository () in
   let actual = name_project actual in
   Alcotest.(check string) "open current repo opens ometrics" expected actual
 
 let open_bad_repo () =
-  let err = run_dry @@ open_repository ~path:"this/path/is/invalid" () in
-  Alcotest.(check bool) "open bad repo fails" true (err = None)
+  try
+    let _ = open_repository ~path:"this/path/is/invalid" () in
+    Alcotest.fail "open bad repo shoud faild"
+  with _ -> ()
 
 let open_and_clean () =
   let pwd = ref "" in
-  let kont _ = run_string "pwd" >>= fun res -> return (pwd := res) in
+  let cont _ =
+    let res = run_string "pwd" in
+    pwd := res
+  in
   let _ =
-    run_dry (open_repository () >>= fun repo -> with_tmp_clone repo kont)
+    let repo = open_repository () in
+    with_tmp_clone repo cont
   in
   let actual = Sys.file_exists !pwd in
   Alcotest.(check bool) "with_tmp_clone cleans the repo" false actual
@@ -39,52 +44,46 @@ let git = "https://gitlab.com/vch9/ometrics-test.git"
 
 let no_merge_commit () =
   let branch = "no-commits" in
-  let actual =
-    run_dry
-      (clone_repository ~branch git >>= fun repo -> find_last_merge_commit repo)
-  in
-  Alcotest.(check (option eq_hash)) "no_merge_commit fails" None actual
+  try
+    let repo = clone_repository ~branch git in
+    let _ = find_last_merge_commit repo in
+    Alcotest.fail "should fail with no merge commit"
+  with _ -> ()
 
 let find_merge_commit () =
   let branch = "merge-commits" in
-  let expected = Some (Hash "7b3d5b8c1c054d280637f4e11cd97135577d3fb5") in
+  let expected = Hash "7b3d5b8c1c054d280637f4e11cd97135577d3fb5" in
   let actual =
-    run_dry
-      ( clone_repository ~branch git >>= fun repo ->
-        let () = Printf.printf "repo: %s" (Git.root_of repo) in
-        find_last_merge_commit repo )
+    let repo = clone_repository ~branch git in
+    find_last_merge_commit repo
   in
-  Alcotest.(check (option eq_hash))
-    "find_merge_commit should find" expected actual
+  Alcotest.(check eq_hash) "find_merge_commit should find" expected actual
 
 let get_commits_after () =
   let branch = "merge-commits" in
   let expected =
-    Some
-      [
-        Hash "ca65467249118435c2ecf4d784c121c0456ffbdc";
-        Hash "73ef14ae0ef1277df03688f8ce7cb96b9a151e5a";
-      ]
+    [
+      Hash "ca65467249118435c2ecf4d784c121c0456ffbdc";
+      Hash "73ef14ae0ef1277df03688f8ce7cb96b9a151e5a";
+    ]
   in
   let actual =
-    run_dry
-      ( clone_repository ~branch git >>= fun repo ->
-        find_last_merge_commit repo >>= fun hash -> get_commits_after repo hash
-      )
+    let repo = clone_repository ~branch git in
+    let hash = find_last_merge_commit repo in
+    get_commits_after repo hash
   in
-  Alcotest.(check (option (list eq_hash)))
+  Alcotest.(check (list eq_hash))
     "get_commits_after gets [foo;bar]" expected actual
 
 let get_changes () =
   let branch = "merge-commits" in
-  let expected = Some Change.[ Edition "foo"; Edition "bar" ] in
+  let expected = Change.[ Edition "foo"; Edition "bar" ] in
   let actual =
-    run_dry
-      ( clone_repository ~branch git >>= fun repo ->
-        find_last_merge_commit repo >>= fun hash ->
-        Git.get_changes ~since:hash repo )
+    let repo = clone_repository ~branch git in
+    let hash = find_last_merge_commit repo in
+    Git.get_changes ~since:hash repo
   in
-  Alcotest.(check (option Test_change.eq_changes))
+  Alcotest.(check Test_change.eq_changes)
     "get_changes finds edit bar and foo" expected actual
 
 let tests =

@@ -1,5 +1,4 @@
 open Change
-open Monad
 open Report
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
@@ -53,14 +52,13 @@ let get_repo = function
 
 let get_hash repo = function
   | "" -> Git.find_last_merge_commit repo
-  | s -> return (Git.hash_from_string s)
+  | s -> Git.hash_from_string s
 
 let check_mr ?output ?git ?title ~clickable ~format r h exclude_files
-    exclude_file_re exclude_entry_re : unit mresult =
+    exclude_file_re exclude_entry_re : unit =
   (* We fetch every changes since [h] in term of files *)
-  Git.get_changes r ~since:h >>= fun changes ->
   let changes =
-    changes |> List.filter is_ml_change
+    Git.get_changes r ~since:h |> List.filter is_ml_change
     |> List.filter (fun ch ->
            not (is_excluded exclude_files exclude_file_re ch))
   in
@@ -70,15 +68,17 @@ let check_mr ?output ?git ?title ~clickable ~format r h exclude_files
   let last_commit = ref None in
 
   (* We look for entries in files before the changes *)
-  Git.with_tmp_clone r ~hash:h (fun _r ->
-      return @@ List.map (fun p -> (p, find_entries p)) before)
-  >>= fun before_undoc ->
+  let before_undoc =
+    Git.with_tmp_clone r ~hash:h (fun _r ->
+        List.map (fun p -> (p, find_entries p)) before)
+  in
   (* We look for entries in files after the changes *)
-  Git.with_tmp_clone r (fun r ->
-      Git.find_last_commit r >>= fun hash ->
-      last_commit := Some hash;
-      return @@ List.map (fun p -> (p, find_entries p)) after)
-  >>= fun after_undoc ->
+  let after_undoc =
+    Git.with_tmp_clone r (fun r ->
+        let hash = Git.find_last_commit r in
+        last_commit := Some hash;
+        List.map (fun p -> (p, find_entries p)) after)
+  in
   (* We remove entries if they were also undocumented before *)
   let entries =
     conciliate_all before_undoc after_undoc changes
@@ -96,10 +96,8 @@ let check_mr ?output ?git ?title ~clickable ~format r h exclude_files
         match deps with [] -> None | _ -> Some (p, deps))
       entries
   in
-
-  return
-  @@ report_full ?output ?title ~clickable ~format ?git
-       (Option.get !last_commit) entries
+  report_full ?output ?title ~clickable ~format ?git (Option.get !last_commit)
+    entries
 
 let opt_string = function "" -> None | x -> Some x
 
@@ -114,19 +112,17 @@ let check_clone git branch commit exclude_files exclude_file_re exclude_entry_re
   let output = opt_string output in
   let title = opt_string title in
   let format = format markdown html gitlab in
-  run
-    (let branch = match branch with "" -> None | x -> Some x in
-     get_repo @@ `Git (git, branch) >>= fun repo ->
-     get_hash repo commit >>= fun hash ->
-     check_mr ~git repo hash exclude_files exclude_file_re exclude_entry_re
-       ?output ~clickable ~format ?title)
+  let branch = match branch with "" -> None | x -> Some x in
+  let repo = get_repo @@ `Git (git, branch) in
+  let hash = get_hash repo commit in
+  check_mr ~git repo hash exclude_files exclude_file_re exclude_entry_re ?output
+    ~clickable ~format ?title
 
 let check path commit exclude_files exclude_file_re exclude_entry_re output
     markdown html gitlab =
   let output = opt_string output in
   let format = format markdown html gitlab in
-  run
-    ( get_repo (`Path path) >>= fun repo ->
-      get_hash repo commit >>= fun hash ->
-      check_mr repo hash exclude_files exclude_file_re exclude_entry_re ?output
-        ~clickable:false ~format )
+  let repo = get_repo (`Path path) in
+  let hash = get_hash repo commit in
+  check_mr repo hash exclude_files exclude_file_re exclude_entry_re ?output
+    ~clickable:false ~format
