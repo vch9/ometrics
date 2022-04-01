@@ -107,22 +107,31 @@ let format markdown html gitlab =
   else if gitlab then `Gitlab
   else `Classic
 
+let wrap f =
+  try f () with Failure exn -> Debug.dbg "Internal failure:\n%s" exn
+
 let check_clone git branch commit exclude_files exclude_file_re exclude_entry_re
     output clickable markdown html gitlab title =
-  let output = opt_string output in
-  let title = opt_string title in
-  let format = format markdown html gitlab in
-  let branch = match branch with "" -> None | x -> Some x in
-  let repo = get_repo @@ `Git (git, branch) in
-  let hash = get_hash repo commit in
-  check_mr ~git repo hash exclude_files exclude_file_re exclude_entry_re ?output
-    ~clickable ~format ?title
+  let f () =
+    let output = opt_string output in
+    let title = opt_string title in
+    let format = format markdown html gitlab in
+    let branch = match branch with "" -> None | x -> Some x in
+    let repo = get_repo @@ `Git (git, branch) in
+    let hash = get_hash repo commit in
+    check_mr ~git repo hash exclude_files exclude_file_re exclude_entry_re
+      ?output ~clickable ~format ?title
+  in
+  wrap f
 
 let check path commit exclude_files exclude_file_re exclude_entry_re output
     markdown html gitlab =
-  let output = opt_string output in
-  let format = format markdown html gitlab in
-  let repo = get_repo (`Path path) in
-  let hash = get_hash repo commit in
-  check_mr repo hash exclude_files exclude_file_re exclude_entry_re ?output
-    ~clickable:false ~format
+  let f () =
+    let output = opt_string output in
+    let format = format markdown html gitlab in
+    let repo = get_repo (`Path path) in
+    let hash = get_hash repo commit in
+    check_mr repo hash exclude_files exclude_file_re exclude_entry_re ?output
+      ~clickable:false ~format
+  in
+  wrap f

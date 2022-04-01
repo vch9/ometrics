@@ -21,16 +21,16 @@ let status_msg cmd status =
 let run_lines : string -> string list =
  fun cmd ->
   let open Unix in
-  let ((out, _, err) as ch) = open_process_full cmd [||] in
+  let ((out, _, _err) as ch) = open_process_full cmd [||] in
   let lines_out = read_lines out in
-  let lines_err = read_lines err in
+  (* let lines_err = read_lines err in *)
   let _, c = waitpid [] (process_full_pid ch) in
   if c = WEXITED 0 then lines_out
-  else (
-    Debug.dbg "Error on %s" cmd;
-    let msg = lines_err |> String.concat "\n" in
-    Debug.dbg "Error: %s" msg;
-    failwith (status_msg cmd c))
+  else
+    (* Debug.dbg "Error on %s" cmd; *)
+    (* let msg = lines_err |> String.concat "\n" in *)
+    (* Debug.dbg "%s" msg; *)
+    failwith (status_msg cmd c)
 
 let run : string -> unit = fun cmd -> run_lines cmd |> ignore
 
