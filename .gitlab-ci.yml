@@ -7,6 +7,7 @@ stages:
 build:
   stage: build
   script:
+    - sudo apt-get install pkg-config
     - git submodule update --init
     - rm -rf _opam
     - opam switch create . 4.12.0 --with-test --yes
