@@ -28,17 +28,11 @@ build:
     # This is dirty but I want to keep the same .opam that is published on opam-repo
     - opam install cmdliner.1.0.4 --yes
     - eval $(opam env)
-
-    - if [ "$DUNE_BUILD_TARGETS" != "" ]; then dune build $DUNE_BUILD_TARGETS --display short; else echo "skipped (DUNE_BUILD_TARGETS is empty)"; fi
-    - echo -e "section_end:`date +%s`:project_build\r\e[0K"
+    - make build
 
     - echo -e "section_start:`date +%s`:project_tests\r\e[0K run the tests"
     - if [ "$DUNE_TEST_TARGETS" != "" ]; then dune build $DUNE_TEST_TARGETS --display short; else echo "skipped (DUNE_TEST_TARGETS is empty)"; fi
     - echo -e "section_end:`date +%s`:project_tests\r\e[0K"
-
-    - echo -e "section_start:`date +%s`:project_doc\r\e[0K build the documentation"
-    - if [ "$DUNE_DOC_TARGETS" != "" ]; then dune build $DUNE_DOC_TARGETS --display short; else echo "skipped (DUNE_DOC_TARGETS is empty)"; fi
-    - echo -e "section_end:`date +%s`:project_doc\r\e[0K"
 
     - echo -e "section_start:`date +%s`:artifacts\r\e[0K populating the artifacts"
     - mkdir -p $ARTIFACTS
@@ -46,12 +40,6 @@ build:
       echo "Build artifacts will be available at
               $CI_JOB_URL/artifacts/browse/$ARTIFACTS
             Note: by default Gitlab only keeps them for a few weeks."
-    - >
-      if [ "$DUNE_DOC_TARGETS" != "" ]; then
-        cp -r _build/default/_doc/_html $ARTIFACTS/doc;
-        echo "Documentation:
-              $CI_JOB_URL/artifacts/browse/$ARTIFACTS/doc/index.html";
-      fi
     - >
       if [ -f _build/log ];
       then
@@ -66,6 +54,4 @@ build:
 variables:
   CLEAN_OPAM_CACHE: "false"
   CLEAN_DUNE_CACHE: "false"
-  DUNE_BUILD_TARGETS: "@install"
   DUNE_TEST_TARGETS: "@runtest"
-  DUNE_DOC_TARGETS: ""
