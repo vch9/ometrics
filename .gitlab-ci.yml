@@ -20,6 +20,8 @@ build:
   script:
     - git submodule update --init
     - if [ -d _opam ]; then echo "we reuse the local opam switch from the CI cache"; fi
+    - if [ ! -d _opam ]; then echo "no local switch in the CI cache, we setup a new switch"; opam switch create --yes --no-install . $OCAML_COMPILER; fi
+
     - opam install depext --yes
     - sudo apt-get update
     - opam install . --dry-run --deps-only --locked --with-test --with-doc --yes | awk '/-> installed/{print $3}' | xargs opam depext -iy
