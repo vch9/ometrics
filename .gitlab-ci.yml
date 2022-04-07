@@ -25,6 +25,8 @@ build:
     - opam install depext --yes
     - sudo apt-get update
     - opam install . --dry-run --deps-only --locked --with-test --with-doc --yes | awk '/-> installed/{print $3}' | xargs opam depext -iy
+    # This is dirty but I want to keep the same .opam that is published on opam-repo
+    - opam install cmdliner.1.0.4 --yes
     - eval $(opam env)
 
     - if [ "$DUNE_BUILD_TARGETS" != "" ]; then dune build $DUNE_BUILD_TARGETS --display short; else echo "skipped (DUNE_BUILD_TARGETS is empty)"; fi
@@ -66,4 +68,4 @@ variables:
   CLEAN_DUNE_CACHE: "false"
   DUNE_BUILD_TARGETS: "@install"
   DUNE_TEST_TARGETS: "@runtest"
-  DUNE_DOC_TARGETS: "" # no doc for now because of unmet dependency
+  DUNE_DOC_TARGETS: ""
