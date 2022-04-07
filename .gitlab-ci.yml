@@ -1,31 +1,13 @@
-image: ocaml/opam
+include: 'https://gitlab.com/nomadic-labs/gitlab-ocaml-ci-example/-/raw/main/.gitlab-ci.yml'
 
-stages:
-  - build
-  - test
+.build-matrix:
+  parallel:
+    matrix:
+    - OCAML_COMPILER: "4.13.1"
 
-build:
-  stage: build
-  script:
-    - git submodule update --init
-    - rm -rf _opam
-    - opam switch create . 4.12.0 --with-test --yes
-    - opam install dot-merlin-reader
-    - eval $(opam env)
-    - make build
-  artifacts:
-    paths:
-      - _opam/
-      - _build/
-      - vendor/
-    expire_in: 1 day
-    when: on_success
-  cache:
-    paths:
-      - _opam/
-
-test:
-  stage: test
-  script:
-    - eval $(opam env)
-    - make test
+variables:
+  CLEAN_OPAM_CACHE: "false"
+  CLEAN_DUNE_CACHE: "false"
+  DUNE_BUILD_TARGETS: "@install"
+  DUNE_TEST_TARGETS: "@runtest"
+  DUNE_DOC_TARGETS: "" # no doc for now because of unmet dependency
