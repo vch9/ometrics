@@ -3,6 +3,7 @@ open Ometrics
 
 module type INPUT = sig
   val modname : string
+
   val modpath : string
 end
 
@@ -18,7 +19,7 @@ module Make (I : INPUT) = struct
   let find_entry kind name =
     List.find
       (fun { entry_kind; entry_name; _ } ->
-        entry_kind = kind && entry_name = I.modname ^ "." ^ name)
+        entry_kind = kind && entry_name = name)
       computed_entries
 
   let assert_documented kind name =
@@ -32,11 +33,13 @@ end
 
 module ML = Make (struct
   let modname = "Example"
+
   let modpath = "example.ml"
 end)
 
 module MLI = Make (struct
   let modname = "Example"
+
   let modpath = "example.mli"
 end)
 
@@ -45,13 +48,17 @@ end)
 (** {2 Types} *)
 
 let ml_t_is_undocumented () = ML.assert_undocumented Type "t"
+
 let ml_u_is_documented () = ML.assert_documented Type "u"
+
 let mli_t_is_documented () = MLI.assert_documented Type "t"
+
 let mli_u_is_undocumented () = MLI.assert_undocumented Type "u"
 
 (** {2 Values} *)
 
 let ml_foo_is_documented () = ML.assert_documented Value "foo"
+
 let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 
 (** {2 Modules} *)

@@ -2,6 +2,7 @@ open Ometrics.Main
 open Cmdliner
 
 let name = "ometrics"
+
 let version = "dev"
 
 let exclude_files =
@@ -87,4 +88,5 @@ let default =
   (Term.(ret (const (`Help (`Pager, None)))), Term.info name ~version ~exits)
 
 let cmds = Check.cmds
+
 let () = Term.(exit @@ eval_choice default cmds)

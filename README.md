@@ -8,8 +8,6 @@ Build from source:
 ```bash
 $ git clone git@gitlab.com:nomadic-labs/ometrics.git
 $ cd ometrics
-$ git submodule update --init
-$ opam switch create . ocaml-base-compiler.4.12.0
 $ make build
 ```
 
