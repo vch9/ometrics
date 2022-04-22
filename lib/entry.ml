@@ -1,4 +1,4 @@
-type kind = (* ModuleType | Module | Functor | *) Type | Value
+type kind = ModuleType | Module | Functor | Type | Value
 
 type t = {
   entry_kind : kind;
@@ -15,14 +15,15 @@ let compare x y =
 type entry = t
 
 let is_documented { entry_documented; _ } = entry_documented
+
 let is_not_documented e = not (is_documented e)
 
 let pp_kind fmt kind =
   let open Format in
   match kind with
-  (* | ModuleType -> pp_print_string fmt "ModuleType"
-   * | Functor -> pp_print_string fmt "Functor"
-   * | Module -> pp_print_string fmt "Module" *)
+  | ModuleType -> pp_print_string fmt "ModuleType"
+  | Functor -> pp_print_string fmt "Functor"
+  | Module -> pp_print_string fmt "Module"
   | Type -> pp_print_string fmt "Type"
   | Value -> pp_print_string fmt "Value"
 

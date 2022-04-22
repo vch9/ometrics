@@ -35,8 +35,21 @@ and entries_of_sig_item ~path ns sign : 'a list =
   | Psig_value vd -> entries_of_sig_value_description ~path ns vd
   | Psig_type (_, decls) ->
       List.concat_map (entries_of_type_declaration ~path ns) decls
-  | Psig_module { pmd_name = { txt = Some ident; _ }; pmd_type; _ } ->
-      entries_of_module_type ~path ns ident pmd_type
+  | Psig_module
+      { pmd_name = { txt = Some ident; _ }; pmd_type; pmd_attributes; _ } ->
+      let entry_documented = is_documented pmd_attributes in
+      Entry.
+        {
+          entry_name = fully_qualified_name ns ident;
+          entry_kind =
+            (match pmd_type.pmty_desc with
+            | Pmty_functor (_, _) -> Functor
+            | _ -> Module);
+          entry_documented;
+          entry_line = line pmd_type.pmty_loc;
+          entry_file = path;
+        }
+      :: entries_of_module_type ~path ns ident pmd_type
   | _ -> []
 
 let to_entries ~path sigs = List.concat_map (entries_of_sig_item ~path []) sigs

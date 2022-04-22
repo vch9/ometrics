@@ -26,7 +26,19 @@ let entries_of_binding ~path ns binding : Entry.t list =
 
 let rec entries_of_module_binding ~path ns binding =
   Option.fold binding.pmb_name.txt ~none:[] ~some:(fun ident ->
-      entries_of_module_expr ~path ns ident binding.pmb_expr)
+      let entry_documented = is_documented binding.pmb_attributes in
+      Entry.
+        {
+          entry_name = fully_qualified_name ns ident;
+          entry_kind =
+            (match binding.pmb_expr.pmod_desc with
+            | Pmod_functor (_, _) -> Functor
+            | _ -> Module);
+          entry_documented;
+          entry_line = line binding.pmb_loc;
+          entry_file = path;
+        }
+      :: entries_of_module_expr ~path ns ident binding.pmb_expr)
 
 and entries_of_module_expr ~path ns ident expr =
   match expr.pmod_desc with
