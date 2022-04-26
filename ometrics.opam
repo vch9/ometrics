@@ -1,5 +1,5 @@
 opam-version: "2.0"
-version: "0.1.3"
+version: "0.2.0"
 license: "MIT"
 maintainer: "Valentin Chaboche <valentin.chaboche@lambda-coins.com>"
 homepage: "https://gitlab.com/nomadic-labs/ometrics"

@@ -1,3 +1,18 @@
+## 0.2.0
+
+### Fixes
+
+- Support type change when parsing changes
+- Support modules and functors
+- Now compatible with opam-mono-repo
+
+### Added
+
+- Removed merlin in favor of Ppxlib
+- Compatible with OCaml 4.14
+- Toplevel modules are now detected
+- Module types are now detected
+
 ## 0.1.3
 
 ### Fixes
