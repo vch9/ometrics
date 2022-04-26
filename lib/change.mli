@@ -10,7 +10,7 @@ val eq : t -> t -> bool
 type change = t
 type changes = change list
 
-val change_from_string : string -> change
+val change_from_string : string -> change option
 val is_ml_change : change -> bool
 val is_ml_file : string -> bool
 val is_excluded : string list -> string list -> change -> bool

@@ -44,7 +44,7 @@ let test_change_from_string_addition_any =
       let s = Printf.sprintf "%s\t%s" mode file in
 
       let expected = Change.(Addition file) in
-      let actual = Change.change_from_string s in
+      let actual = Option.get @@ Change.change_from_string s in
 
       Helpers.qcheck_eq ~eq:Change.eq ~pp:Change.pp expected actual)
   |> QCheck_alcotest.to_alcotest
@@ -57,7 +57,7 @@ let test_change_from_string_deletion_any =
       let s = Printf.sprintf "%s\t%s" mode file in
 
       let expected = Change.(Deletion file) in
-      let actual = Change.change_from_string s in
+      let actual = Option.get @@ Change.change_from_string s in
 
       Helpers.qcheck_eq ~eq:Change.eq ~pp:Change.pp expected actual)
   |> QCheck_alcotest.to_alcotest
@@ -70,7 +70,7 @@ let test_change_from_string_edition_any =
       let s = Printf.sprintf "%s\t%s" mode file in
 
       let expected = Change.(Edition file) in
-      let actual = Change.change_from_string s in
+      let actual = Option.get @@ Change.change_from_string s in
 
       Helpers.qcheck_eq ~eq:Change.eq ~pp:Change.pp expected actual)
   |> QCheck_alcotest.to_alcotest
@@ -83,7 +83,7 @@ let test_change_from_string_renaming_any =
       let s = Printf.sprintf "%s\t%s\t%s" mode src dst in
 
       let expected = Change.(Renaming (src, dst)) in
-      let actual = Change.change_from_string s in
+      let actual = Option.get @@ Change.change_from_string s in
 
       Helpers.qcheck_eq ~eq:Change.eq ~pp:Change.pp expected actual)
   |> QCheck_alcotest.to_alcotest
@@ -93,7 +93,7 @@ let test_change_from_string_fail =
     Gen.string (fun s ->
       try
         let s = "_" ^ s in
-        let _ = Change.change_from_string s in
+        let _ = Option.get @@ Change.change_from_string s in
         false
       with
       | Invalid_argument _ -> true

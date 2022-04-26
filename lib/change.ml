@@ -135,14 +135,11 @@ let renaming_from_string str =
 
 let change_from_string str =
   match addition_from_string str with
-  | Some c -> c
+  | Some _ as res -> res
   | None -> (
       match deletion_from_string str with
-      | Some c -> c
+      | Some _ as res -> res
       | None -> (
           match edition_from_string str with
-          | Some c -> c
-          | None -> (
-              match renaming_from_string str with
-              | Some c -> c
-              | None -> raise (Invalid_argument str))))
+          | Some _ as res -> res
+          | None -> renaming_from_string str))

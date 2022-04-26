@@ -126,7 +126,7 @@ let changes_of : repository -> hash -> changes =
   let changes =
     run_lines Format.(sprintf "git --no-pager -C %s show %s %s" r show_opts h)
   in
-  List.map change_from_string changes
+  List.filter_map change_from_string changes
 
 let get_changes : repository -> since:hash -> changes =
  fun r ~since ->
