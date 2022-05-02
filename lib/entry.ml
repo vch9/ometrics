@@ -1,4 +1,4 @@
-type kind = ModuleType | Module | Functor | Type | Value
+type kind = Toplevel | ModuleType | Module | Functor | Type | Value
 
 type t = {
   entry_kind : kind;
@@ -20,6 +20,7 @@ let is_not_documented e = not (is_documented e)
 let pp_kind fmt kind =
   let open Format in
   match kind with
+  | Toplevel -> pp_print_string fmt "Toplevel"
   | ModuleType -> pp_print_string fmt "ModuleType"
   | Functor -> pp_print_string fmt "Functor"
   | Module -> pp_print_string fmt "Module"

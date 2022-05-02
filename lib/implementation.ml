@@ -54,4 +54,29 @@ and entries_of_struct_item ~path ns { pstr_desc; pstr_loc = _ } =
       List.concat_map (entries_of_module_binding ~path ns) bindings
   | _ -> []
 
-let to_entries ~path str = List.concat_map (entries_of_struct_item ~path []) str
+let toplevel ~path strs =
+  match strs with
+  | { pstr_desc = Pstr_attribute attribute; _ } :: _ -> (
+      (* I'm not 100% sure about this method to get the toplevel module name,
+         I'd rather have an undetected undocumented entry than an exception. *)
+      try
+        let entry_documented = attribute.attr_name.txt = "ocaml.text" in
+        let entry_name =
+          Filename.basename path |> Filename.chop_extension
+          |> String.capitalize_ascii
+        in
+        [
+          Entry.
+            {
+              entry_name;
+              entry_kind = Toplevel;
+              entry_documented;
+              entry_line = 0;
+              entry_file = path;
+            };
+        ]
+      with _ -> [])
+  | _ -> []
+
+let to_entries ~path str =
+  toplevel ~path str @ List.concat_map (entries_of_struct_item ~path []) str

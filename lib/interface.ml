@@ -48,4 +48,29 @@ and entries_of_sig_item ~path ns sign : 'a list =
       :: entries_of_module_type ~path ns ident pmd_type
   | _ -> []
 
-let to_entries ~path sigs = List.concat_map (entries_of_sig_item ~path []) sigs
+let toplevel ~path strs =
+  match strs with
+  | { psig_desc = Psig_attribute attribute; _ } :: _ -> (
+      (* I'm not 100% sure about this method to get the toplevel module name,
+         I'd rather have an undetected undocumented entry than an exception. *)
+      try
+        let entry_documented = attribute.attr_name.txt = "ocaml.text" in
+        let entry_name =
+          Filename.basename path |> Filename.chop_extension
+          |> String.capitalize_ascii
+        in
+        [
+          Entry.
+            {
+              entry_name;
+              entry_kind = Toplevel;
+              entry_documented;
+              entry_line = 0;
+              entry_file = path;
+            };
+        ]
+      with _ -> [])
+  | _ -> []
+
+let to_entries ~path sigs =
+  toplevel ~path sigs @ List.concat_map (entries_of_sig_item ~path []) sigs
