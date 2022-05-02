@@ -1,11 +1,7 @@
 let fully_qualified_name = Misc.fully_qualified_name
-
 let is_documented = Misc.is_documented
-
 let pattern_idents = Misc.pattern_idents
-
 let line = Misc.line
-
 let entries_of_type_declaration = Misc.entries_of_type_declaration
 
 open Ppxlib

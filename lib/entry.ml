@@ -15,7 +15,6 @@ let compare x y =
 type entry = t
 
 let is_documented { entry_documented; _ } = entry_documented
-
 let is_not_documented e = not (is_documented e)
 
 let pp_kind fmt kind =

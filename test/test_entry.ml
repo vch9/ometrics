@@ -3,7 +3,6 @@ open Ometrics
 
 module type INPUT = sig
   val modname : string
-
   val modpath : string
 end
 
@@ -33,13 +32,11 @@ end
 
 module ML = Make (struct
   let modname = "Example"
-
   let modpath = "example.ml"
 end)
 
 module MLI = Make (struct
   let modname = "Example"
-
   let modpath = "example.mli"
 end)
 
@@ -48,17 +45,13 @@ end)
 (** {2 Types} *)
 
 let ml_t_is_undocumented () = ML.assert_undocumented Type "t"
-
 let ml_u_is_documented () = ML.assert_documented Type "u"
-
 let mli_t_is_documented () = MLI.assert_documented Type "t"
-
 let mli_u_is_undocumented () = MLI.assert_undocumented Type "u"
 
 (** {2 Values} *)
 
 let ml_foo_is_documented () = ML.assert_documented Value "foo"
-
 let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 
 (** {2 Modules} *)
@@ -73,9 +66,7 @@ let ml_module_A_is_documented () = ML.assert_documented Module "A"
 
 (* Fails because it is not considered as a [ocaml.doc] attribute *)
 let ml_module_B_is_documented () = ML.assert_documented Module "B"
-
 let ml_module_C_is_undocumented () = ML.assert_undocumented Module "C"
-
 let ml_entries_in_module () = ML.assert_documented Value "Foo.x"
 
 (** {3 MLI} *)
@@ -88,9 +79,7 @@ let mli_module_A_is_documented () = MLI.assert_documented Module "A"
 
 (* Fails because it is not considered as a [ocaml.doc] attribute *)
 let mli_module_B_is_documented () = MLI.assert_documented Module "B"
-
 let mli_module_C_is_undocumented () = MLI.assert_undocumented Module "C"
-
 let mli_entries_in_module () = MLI.assert_undocumented Value "Foo.x"
 
 let tests =
