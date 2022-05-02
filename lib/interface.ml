@@ -1,57 +1,95 @@
-open Entry
-open Misc
-open Typedtree
-open Types
+let fully_qualified_name = Misc.fully_qualified_name
+let is_documented = Misc.is_documented
+let pattern_idents = Misc.pattern_idents
+let line = Misc.line
+let entries_of_type_declaration = Misc.entries_of_type_declaration
 
-let entries_of_sig_value ~path ns comments ident descr =
+open Ppxlib
+
+let entries_of_sig_value_description ~path ns vd =
+  let entry_documented = is_documented vd.pval_attributes in
   [
-    {
-      entry_name = fully_qualified_name ns ident;
-      entry_kind = Value;
-      entry_documented = is_documented comments descr.val_loc;
-      entry_line = line descr.val_loc;
-      entry_file = path;
-    };
+    Entry.
+      {
+        entry_name = fully_qualified_name ns vd.pval_name.txt;
+        entry_kind = Value;
+        entry_documented;
+        entry_line = line vd.pval_loc;
+        entry_file = path;
+      };
   ]
 
-let entries_of_sig_type ~path ns comments ident decl =
-  [
+let rec entries_of_module_type ~path ns ident md =
+  match md.pmty_desc with
+  | Pmty_signature signature ->
+      List.concat_map (entries_of_sig_item ~path (ident :: ns)) signature
+  | Pmty_functor (_, mtyp) -> entries_of_module_type ~path ns ident mtyp
+  | _ -> []
+
+and entries_of_sig_item ~path ns sign : 'a list =
+  match sign.psig_desc with
+  | Psig_value vd -> entries_of_sig_value_description ~path ns vd
+  | Psig_type (_, decls) ->
+      List.concat_map (entries_of_type_declaration ~path ns) decls
+  | Psig_module
+      { pmd_name = { txt = Some ident; _ }; pmd_type; pmd_attributes; _ } ->
+      let entry_documented = is_documented pmd_attributes in
+      Entry.
+        {
+          entry_name = fully_qualified_name ns ident;
+          entry_kind =
+            (match pmd_type.pmty_desc with
+            | Pmty_functor (_, _) -> Functor
+            | _ -> Module);
+          entry_documented;
+          entry_line = line pmd_type.pmty_loc;
+          entry_file = path;
+        }
+      :: entries_of_module_type ~path ns ident pmd_type
+  | Psig_modtype decl -> entries_of_module_type_declaration ~path ns decl
+  | _ -> []
+
+and entries_of_module_type_declaration ~path ns decl : Entry.t list =
+  let entry_documented = is_documented decl.pmtd_attributes in
+  Entry.
     {
-      entry_name = fully_qualified_name ns ident;
-      entry_kind = Type;
-      entry_documented = is_documented comments decl.type_loc;
-      entry_line = line decl.type_loc;
+      entry_name = fully_qualified_name ns decl.pmtd_name.txt;
+      entry_kind = ModuleType;
+      entry_documented;
+      entry_line = line decl.pmtd_loc;
       entry_file = path;
-    };
-  ]
-
-let rec entries_of_sig_module ~path ns comments ident decl =
-  (* {
-   *   entry_name = fully_qualified_name ns ident;
-   *   entry_kind =
-   *     (match decl.md_type with Mty_functor (_, _) -> Functor | _ -> Module);
-   *   entry_documented = is_documented comments decl.md_loc;
-   * }
-   * :: *)
-  entries_of_module_type ~path ns comments ident decl.md_type
-
-and entries_of_module_type ~path ns comments ident = function
-  | Mty_signature signature ->
+    }
+  ::
+  (match decl.pmtd_type with
+  | Some { pmty_desc = Pmty_signature signature; _ } ->
       List.concat_map
-        (entries_of_sig_item ~path (Ident.name ident :: ns) comments)
+        (entries_of_sig_item ~path (decl.pmtd_name.txt :: ns))
         signature
-  | Mty_functor (_, mtyp) -> entries_of_module_type ~path ns comments ident mtyp
+  | _ -> [])
+
+let toplevel ~path strs =
+  match strs with
+  | { psig_desc = Psig_attribute attribute; _ } :: _ -> (
+      (* I'm not 100% sure about this method to get the toplevel module name,
+         I'd rather have an undetected undocumented entry than an exception. *)
+      try
+        let entry_documented = attribute.attr_name.txt = "ocaml.text" in
+        let entry_name =
+          Filename.basename path |> Filename.chop_extension
+          |> String.capitalize_ascii
+        in
+        [
+          Entry.
+            {
+              entry_name;
+              entry_kind = Toplevel;
+              entry_documented;
+              entry_line = 0;
+              entry_file = path;
+            };
+        ]
+      with _ -> [])
   | _ -> []
 
-and entries_of_sig_item ~path ns comments : Types.signature_item -> entry list =
-  function
-  | Sig_value (ident, descr, Exported) ->
-      entries_of_sig_value ~path ns comments ident descr
-  | Sig_type (ident, decl, _, Exported) ->
-      entries_of_sig_type ~path ns comments ident decl
-  | Sig_module (ident, _, decl, _, Exported) ->
-      entries_of_sig_module ~path ns comments ident decl
-  | _ -> []
-
-let to_entries ~path ns comments i =
-  List.concat_map (entries_of_sig_item ~path ns comments) i.sig_type
+let to_entries ~path sigs =
+  toplevel ~path sigs @ List.concat_map (entries_of_sig_item ~path []) sigs

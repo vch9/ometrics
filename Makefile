@@ -1,21 +1,25 @@
 all: build
 
 build:
-	@dune build
+	dune build
 
 test: build
-	ln -sf _build/default/bin/main.exe ometrics
-	@dune runtest
+	dune build @runtest
 
 clean:
 	@dune clean
 	rm -rf _coverage
 	rm -rf ometrics
 
-coverage-summary:
-	@dune runtest -f --instrument-with bisect_ppx test/ || true
-	@bisect-ppx-report summary
+PWD=$(shell pwd)
 
-coverage-html:
-	@dune runtest -f --instrument-with bisect_ppx test/ || true
-	@bisect-ppx-report html
+instrumented-test:
+	mkdir -p _coverage
+	BISECT_FILE="${PWD}/_coverage/" dune build --instrument-with bisect_ppx
+	BISECT_FILE="${PWD}/_coverage/" dune runtest -f --instrument-with bisect_ppx
+
+coverage-summary: instrumented-test
+	@bisect-ppx-report summary --per-file --coverage-path _coverage/
+
+coverage-html: instrumented-test
+	@bisect-ppx-report html --coverage-path _coverage/

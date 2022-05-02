@@ -33,6 +33,9 @@ type u = int
 (** Test *)
 let foo () = ()
 
+(** Documented *)
+let x = 0
+
 module Foo = struct
   (** Test *)
   let x = 0
@@ -40,6 +43,7 @@ end
 
 (** Test *)
 module A = struct
+  (** Documented *)
   let x = 0
 end
 

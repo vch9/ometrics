@@ -1,31 +1,58 @@
-image: ocaml/opam
+include: 'https://gitlab.com/nomadic-labs/gitlab-ocaml-ci-example/-/raw/main/.gitlab-ci.yml'
 
-stages:
-  - build
-  - test
+.build-matrix:
+  parallel:
+    matrix:
+    - OCAML_COMPILER: "4.12.1"
+    - OCAML_COMPILER: "4.13.1"
+    - OCAML_COMPILER: "4.14.0"
 
 build:
   stage: build
+  extends: .build-matrix
+  variables:
+    ARTIFACTS: "artifacts/$OCAML_COMPILER"
+  image: ocaml/opam:debian-testing-opam
+  cache:
+    key: $OCAML_COMPILER
+    paths:
+      - _opam
+      - _build
   script:
     - git submodule update --init
-    - rm -rf _opam
-    - opam switch create . 4.12.0 --with-test --yes
-    - opam install dot-merlin-reader
+    - if [ -d _opam ]; then echo "we reuse the local opam switch from the CI cache"; fi
+    - if [ ! -d _opam ]; then echo "no local switch in the CI cache, we setup a new switch"; opam switch create --yes --no-install . $OCAML_COMPILER; fi
+
+    - opam install depext --yes
+    - sudo apt-get update
+    - opam install . --dry-run --deps-only --locked --with-test --with-doc --yes | awk '/-> installed/{print $3}' | xargs opam depext -iy
+    # This is dirty but I want to keep the same .opam that is published on opam-repo
+    - opam install cmdliner.1.0.4 --yes
     - eval $(opam env)
     - make build
-  artifacts:
-    paths:
-      - _opam/
-      - _build/
-      - vendor/
-    expire_in: 1 day
-    when: on_success
-  cache:
-    paths:
-      - _opam/
 
-test:
-  stage: test
-  script:
-    - eval $(opam env)
-    - make test
+    - echo -e "section_start:`date +%s`:project_tests\r\e[0K run the tests"
+    - if [ "$DUNE_TEST_TARGETS" != "" ]; then dune build $DUNE_TEST_TARGETS --display short; else echo "skipped (DUNE_TEST_TARGETS is empty)"; fi
+    - echo -e "section_end:`date +%s`:project_tests\r\e[0K"
+
+    - echo -e "section_start:`date +%s`:artifacts\r\e[0K populating the artifacts"
+    - mkdir -p $ARTIFACTS
+    - >
+      echo "Build artifacts will be available at
+              $CI_JOB_URL/artifacts/browse/$ARTIFACTS
+            Note: by default Gitlab only keeps them for a few weeks."
+    - >
+      if [ -f _build/log ];
+      then
+        mkdir -p $ARTIFACTS/_build;
+        cp _build/log $ARTIFACTS/_build/log
+        echo "Dune build log:
+              $CI_JOB_URL/artifacts/browse/$ARTIFACTS/_build/log";
+      fi
+    - echo -e "section_end:`date +%s`:artifacts\r\e[0K"
+
+
+variables:
+  CLEAN_OPAM_CACHE: "false"
+  CLEAN_DUNE_CACHE: "false"
+  DUNE_TEST_TARGETS: "@runtest"

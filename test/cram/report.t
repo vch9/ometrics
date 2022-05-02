@@ -4,15 +4,15 @@ Markdown without clickable links
   
     * <details><summary markdown="span">tezt/foo.ml</summary>
   
-      * `Value`: Foo.tezt
+      * `Value`: tezt
   
     * <details><summary markdown="span">src/test/test_main.ml</summary>
   
-      * `Value`: Test_main.test_sum
+      * `Value`: test_sum
   
     * <details><summary markdown="span">src/main.ml</summary>
   
-      * `Value`: Main.sum
+      * `Value`: sum
   
   </details>
 
@@ -22,15 +22,15 @@ Markdown with clickables links
   
     * <details><summary markdown="span">tezt/foo.ml</summary>
   
-      * `Value`: [`Foo.tezt`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/tezt/foo.ml#1)
+      * `Value`: [`tezt`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/tezt/foo.ml#1)
   
     * <details><summary markdown="span">src/test/test_main.ml</summary>
   
-      * `Value`: [`Test_main.test_sum`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/src/test/test_main.ml#1)
+      * `Value`: [`test_sum`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/src/test/test_main.ml#1)
   
     * <details><summary markdown="span">src/main.ml</summary>
   
-      * `Value`: [`Main.sum`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/src/main.ml#1)
+      * `Value`: [`sum`](https://gitlab.com/vch9/ometrics-test/-/tree/4e083e743d9a4500958635867779fa9bcacbacda/src/main.ml#1)
   
   </details>
 
@@ -44,15 +44,15 @@ HTML
     <h2>Undocumented entries introduced since 4e083e743d9a4500958635867779fa9bcacbacda</h2>
   <h3>tezt/foo.ml</h3>
   <ol>
-    <li>Value: Foo.tezt</li>
+    <li>Value: tezt</li>
   </ol>
   <h3>src/test/test_main.ml</h3>
   <ol>
-    <li>Value: Test_main.test_sum</li>
+    <li>Value: test_sum</li>
   </ol>
   <h3>src/main.ml</h3>
   <ol>
-    <li>Value: Main.sum</li>
+    <li>Value: sum</li>
   </ol>
   <body>
   </html>

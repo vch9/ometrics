@@ -49,4 +49,5 @@ end
 
 module C : sig
   val x : int
+  (** Test *)
 end
