@@ -46,6 +46,7 @@ end)
 
 let ml_t_is_undocumented () = ML.assert_undocumented Type "t"
 let ml_u_is_documented () = ML.assert_documented Type "u"
+let ml_x_is_documented () = ML.assert_documented Value "x"
 let mli_t_is_documented () = MLI.assert_documented Type "t"
 let mli_u_is_undocumented () = MLI.assert_undocumented Type "u"
 
@@ -62,12 +63,14 @@ let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 (* let ml_toplevel_is_documented () =
  *   Alcotest.(check bool) "toplevel" true ML.toplevel.entry_documented *)
 
-let ml_module_A_is_documented () = ML.assert_documented Module "A"
-
 (* Fails because it is not considered as a [ocaml.doc] attribute *)
-let ml_module_B_is_documented () = ML.assert_documented Module "B"
+(* let ml_module_B_is_documented () = ML.assert_documented Module "B" *)
+
+let ml_module_A_is_documented () = ML.assert_documented Module "A"
+let ml_module_A_x_documented () = ML.assert_documented Value "A.x"
+let ml_module_B_x_undocumented () = ML.assert_undocumented Value "B.x"
 let ml_module_C_is_undocumented () = ML.assert_undocumented Module "C"
-let ml_entries_in_module () = ML.assert_documented Value "Foo.x"
+let ml_module_Foo_x_documented () = ML.assert_documented Value "Foo.x"
 
 (** {3 MLI} *)
 
@@ -75,31 +78,40 @@ let ml_entries_in_module () = ML.assert_documented Value "Foo.x"
 (* let mli_toplevel_is_documented () =
  *   Alcotest.(check bool) "toplevel" true MLI.toplevel.entry_documented *)
 
-let mli_module_A_is_documented () = MLI.assert_documented Module "A"
-
 (* Fails because it is not considered as a [ocaml.doc] attribute *)
-let mli_module_B_is_documented () = MLI.assert_documented Module "B"
+(* let mli_module_B_is_documented () = MLI.assert_documented Module "B" *)
+
+let mli_module_A_is_documented () = MLI.assert_documented Module "A"
 let mli_module_C_is_undocumented () = MLI.assert_undocumented Module "C"
-let mli_entries_in_module () = MLI.assert_undocumented Value "Foo.x"
+let mli_module_Foo_x_is_undocumented () = MLI.assert_undocumented Value "Foo.x"
+let mli_module_C_x_is_documented () = MLI.assert_undocumented Value "Foo.x"
 
 let tests =
   ( "Entry",
     Alcotest.
       [
+        (* Implementation *)
         test_case "ml-t-is-undocumented" `Quick ml_t_is_undocumented;
         test_case "ml-u-is-documented" `Quick ml_u_is_documented;
+        test_case "ml-x-is-documented" `Quick ml_x_is_documented;
+        test_case "ml-foo-is-documented" `Quick ml_foo_is_documented;
+        test_case "ml-Foo-x-is-documented" `Quick ml_module_Foo_x_documented;
+        test_case "ml-A-is-documented" `Quick ml_module_A_is_documented;
+        test_case "ml-A-x-is-documented" `Quick ml_module_A_x_documented;
+        test_case "ml-B-x-is-undocumented" `Quick ml_module_B_x_undocumented;
+        test_case "ml-C-is-undocumented" `Quick ml_module_C_is_undocumented;
+        (* Interface *)
         test_case "mli-t-is-documented" `Quick mli_t_is_documented;
         test_case "mli-u-is-undocumented" `Quick mli_u_is_undocumented;
-        test_case "ml-foo-is-documented" `Quick ml_foo_is_documented;
         test_case "mli-foo-is-undocumented" `Quick mli_foo_is_undocumented;
-        test_case "ml-entries-in-module" `Quick ml_entries_in_module;
-        test_case "mli-entries-in-module" `Quick mli_entries_in_module;
-        (* test_case "ml-toplevel-is-documented" `Quick ml_toplevel_is_documented; *)
-        test_case "ml-A-is-documented" `Quick ml_module_A_is_documented;
-        (* test_case "ml-B-is-documented" `Quick ml_module_B_is_documented; *)
-        test_case "ml-C-is-undocumented" `Quick ml_module_C_is_undocumented;
-        (* test_case "mli-toplevel-is-documented" `Quick mli_toplevel_is_documented; *)
+        test_case "mli-Foo-x-is-undocumented" `Quick
+          mli_module_Foo_x_is_undocumented;
         test_case "mli-A-is-documented" `Quick mli_module_A_is_documented;
-        (* test_case "mli-B-is-documented" `Quick mli_module_B_is_documented; *)
         test_case "mli-C-is-undocumented" `Quick mli_module_C_is_undocumented;
+        test_case "mli-C-x-is-documented" `Quick mli_module_C_x_is_documented
+        (* Failing tests *)
+        (* test_case "ml-toplevel-is-documented" `Quick ml_toplevel_is_documented; *)
+        (* test_case "ml-B-is-documented" `Quick ml_module_B_is_documented; *)
+        (* test_case "mli-toplevel-is-documented" `Quick mli_toplevel_is_documented; *)
+        (* test_case "mli-B-is-documented" `Quick mli_module_B_is_documented; *);
       ] )
