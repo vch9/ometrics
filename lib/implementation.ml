@@ -52,6 +52,8 @@ and entries_of_struct_item ~path ns { pstr_desc; pstr_loc = _ } =
   | Pstr_module binding -> entries_of_module_binding ~path ns binding
   | Pstr_recmodule bindings ->
       List.concat_map (entries_of_module_binding ~path ns) bindings
+  | Pstr_modtype decl ->
+      Interface.entries_of_module_type_declaration ~path ns decl
   | _ -> []
 
 let toplevel ~path strs =

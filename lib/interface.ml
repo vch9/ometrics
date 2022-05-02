@@ -46,7 +46,26 @@ and entries_of_sig_item ~path ns sign : 'a list =
           entry_file = path;
         }
       :: entries_of_module_type ~path ns ident pmd_type
+  | Psig_modtype decl -> entries_of_module_type_declaration ~path ns decl
   | _ -> []
+
+and entries_of_module_type_declaration ~path ns decl : Entry.t list =
+  let entry_documented = is_documented decl.pmtd_attributes in
+  Entry.
+    {
+      entry_name = fully_qualified_name ns decl.pmtd_name.txt;
+      entry_kind = ModuleType;
+      entry_documented;
+      entry_line = line decl.pmtd_loc;
+      entry_file = path;
+    }
+  ::
+  (match decl.pmtd_type with
+  | Some { pmty_desc = Pmty_signature signature; _ } ->
+      List.concat_map
+        (entries_of_sig_item ~path (decl.pmtd_name.txt :: ns))
+        signature
+  | _ -> [])
 
 let toplevel ~path strs =
   match strs with
