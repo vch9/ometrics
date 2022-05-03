@@ -15,7 +15,7 @@ let rec pattern_idents pat : string list =
   | Ppat_var x -> [ x.txt ]
   | Ppat_alias (pat, id) -> id.txt :: pattern_idents pat
   | Ppat_array pats | Ppat_tuple pats -> List.concat_map pattern_idents pats
-  | Ppat_construct (_, Some pat)
+  | Ppat_construct (_, Some (_, pat))
   | Ppat_variant (_, Some pat)
   | Ppat_lazy pat
   | Ppat_exception pat ->
