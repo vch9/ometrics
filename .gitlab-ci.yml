@@ -19,7 +19,6 @@ build:
       - _opam
       - _build
   script:
-    - git submodule update --init
     - if [ -d _opam ]; then echo "we reuse the local opam switch from the CI cache"; fi
     - if [ ! -d _opam ]; then echo "no local switch in the CI cache, we setup a new switch"; opam switch create --yes --no-install . $OCAML_COMPILER; fi
 
