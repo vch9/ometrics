@@ -1,5 +1,5 @@
-open Ometrics.Entry
-open Ometrics
+open Analysis.Entry
+open Documentation
 
 module type INPUT = sig
   val modname : string
@@ -10,24 +10,24 @@ module Make (I : INPUT) = struct
   let computed_entries = Toplevel.to_entries I.modpath
 
   let toplevel =
-    List.find
+    List.find_opt
       (fun { entry_kind; entry_name; _ } ->
         entry_kind = Toplevel && entry_name = I.modname)
       computed_entries
+    |> Option.is_some
 
   let find_entry kind name =
-    List.find
+    List.find_opt
       (fun { entry_kind; entry_name; _ } ->
         entry_kind = kind && entry_name = name)
       computed_entries
+    |> Option.is_some
 
   let assert_documented kind name =
-    Alcotest.(check bool)
-      "documented entry" true (find_entry kind name).entry_documented
+    Alcotest.(check bool) "documented entry" false (find_entry kind name)
 
   let assert_undocumented kind name =
-    Alcotest.(check bool)
-      "undocumented entry" false (find_entry kind name).entry_documented
+    Alcotest.(check bool) "undocumented entry" true (find_entry kind name)
 end
 
 module ML = Make (struct
@@ -63,7 +63,7 @@ let mli_foo_is_undocumented () = ML.assert_documented Value "foo"
 (* let ml_module_B_is_documented () = ML.assert_documented Module "B" *)
 
 let ml_toplevel_is_documented () =
-  Alcotest.(check bool) "toplevel" true ML.toplevel.entry_documented
+  Alcotest.(check bool) "toplevel" false ML.toplevel
 
 let ml_module_A_is_documented () = ML.assert_documented Module "A"
 let ml_module_A_x_documented () = ML.assert_documented Value "A.x"
@@ -77,7 +77,7 @@ let ml_module_Foo_x_documented () = ML.assert_documented Value "Foo.x"
 (* let mli_module_B_is_documented () = MLI.assert_documented Module "B" *)
 
 let mli_toplevel_is_documented () =
-  Alcotest.(check bool) "toplevel" true MLI.toplevel.entry_documented
+  Alcotest.(check bool) "toplevel" false MLI.toplevel
 
 let mli_module_A_is_documented () = MLI.assert_documented Module "A"
 let mli_module_C_is_undocumented () = MLI.assert_undocumented Module "C"

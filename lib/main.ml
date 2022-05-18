@@ -1,5 +1,7 @@
 open Change
 open Report
+open Analysis
+open Documentation
 
 (** [choose_file "target.ml"] returns "target.mli" if it exists,
     "target.ml" otherwise. *)

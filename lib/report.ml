@@ -1,4 +1,7 @@
-let default_msg = "ometrics has not found undocumented entries in your changes."
+open Analysis
+
+let default_msg =
+  "ometrics has not found any code quality issues in your changes."
 
 (** [link_prefix git hash] computes the link prefix based on [git] and [hash].
 
@@ -26,7 +29,7 @@ let with_link clickable git hash =
 
 (** {2. Markdown } *)
 
-let intro = "⚠ There are changes which are not documented:"
+let intro = "⚠ There are code quality issues:"
 
 let report_file_markdown ?with_link fmt (p, deps) =
   let open Format in
@@ -81,7 +84,7 @@ let report_html ~clickable ?title fmt git hash entries =
     (Option.value ~default:hash title)
     (match entries with
     | [] -> default_msg
-    | _ -> Format.sprintf "Undocumented entries introduced since %s" hash);
+    | _ -> Format.sprintf "Code quality issues introduced since %s" hash);
   List.iter (pp_file_html fmt ?with_link) entries;
   pp_print_string fmt "<body>\n</html>\n"
 
@@ -98,14 +101,14 @@ let report fmt entries =
               fprintf fmt "@[<v># `%s`@ @ @]" p;
               fprintf fmt "@[<v>%a@ @ @]"
                 (pp_print_list ~pp_sep:pp_print_space (fun fmt e ->
-                     fprintf fmt "- `%a`" (Entry.pp ~with_mark:false) e))
+                     fprintf fmt "- `%a`" Entry.pp e))
                 deps)))
         entries
 
 (** {2. GitLab } *)
 
 let pp_gitlab_entry ?(comma = false) fmt path
-    Entry.{ entry_name; entry_line; _ } =
+    Entry.{ entry_name; entry_line; entry_description; _ } =
   let entry_name = Entry.base_entry_name entry_name in
 
   let hash =
@@ -118,7 +121,7 @@ let pp_gitlab_entry ?(comma = false) fmt path
   Format.fprintf fmt
     {|
   {
-    "description" : "'%s' is not documented.",
+    "description" : "'%s' %s.",
     "fingerprint" : "%a",
     "severity": "minor",
     "location": {
@@ -129,7 +132,7 @@ let pp_gitlab_entry ?(comma = false) fmt path
     }
   }%s
 |}
-    entry_name Digestif.SHA256.pp hash path entry_line
+    entry_name entry_description Digestif.SHA256.pp hash path entry_line
     (if comma then "," else "")
 
 let report_gitlab fmt entries =
@@ -167,9 +170,7 @@ let report_full ~format ~clickable ?title ?output ?git hash entries =
   in
   let entries =
     List.filter_map
-      (fun (p, deps) ->
-        let deps = List.filter (fun x -> not (Entry.is_documented x)) deps in
-        match deps with [] -> None | deps -> Some (p, deps))
+      (fun (p, deps) -> match deps with [] -> None | deps -> Some (p, deps))
       entries
   in
   let () =

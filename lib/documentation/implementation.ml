@@ -3,37 +3,29 @@ let is_documented = Misc.is_documented
 let pattern_idents = Misc.pattern_idents
 let line = Misc.line
 let entries_of_type_declaration = Misc.entries_of_type_declaration
+let mk_entry = Misc.mk_entry
 
 open Ppxlib
+open Analysis
 
-let entries_of_binding ~path ns binding : Entry.t list =
-  let entry_documented = is_documented binding.pvb_attributes in
+let entries_of_binding ~path ns binding : Entry.t option list =
   List.map
     (fun ident ->
-      Entry.
-        {
-          entry_name = fully_qualified_name ns ident;
-          entry_kind = Value;
-          entry_documented;
-          entry_line = line binding.pvb_loc;
-          entry_file = path;
-        })
+      mk_entry
+        (fully_qualified_name ns ident)
+        Value binding.pvb_loc path
+        (is_documented binding.pvb_attributes))
     (pattern_idents binding.pvb_pat)
 
 let rec entries_of_module_binding ~path ns binding =
   Option.fold binding.pmb_name.txt ~none:[] ~some:(fun ident ->
-      let entry_documented = is_documented binding.pmb_attributes in
-      Entry.
-        {
-          entry_name = fully_qualified_name ns ident;
-          entry_kind =
-            (match binding.pmb_expr.pmod_desc with
-            | Pmod_functor (_, _) -> Functor
-            | _ -> Module);
-          entry_documented;
-          entry_line = line binding.pmb_loc;
-          entry_file = path;
-        }
+      mk_entry
+        (fully_qualified_name ns ident)
+        (match binding.pmb_expr.pmod_desc with
+        | Pmod_functor (_, _) -> Functor
+        | _ -> Module)
+        binding.pmb_loc path
+        (is_documented binding.pmb_attributes)
       :: entries_of_module_expr ~path ns ident binding.pmb_expr)
 
 and entries_of_module_expr ~path ns ident expr =
@@ -62,23 +54,16 @@ let toplevel ~path strs =
       (* I'm not 100% sure about this method to get the toplevel module name,
          I'd rather have an undetected undocumented entry than an exception. *)
       try
-        let entry_documented = attribute.attr_name.txt = "ocaml.text" in
         let entry_name =
           Filename.basename path |> Filename.chop_extension
           |> String.capitalize_ascii
         in
-        [
-          Entry.
-            {
-              entry_name;
-              entry_kind = Toplevel;
-              entry_documented;
-              entry_line = 0;
-              entry_file = path;
-            };
-        ]
-      with _ -> [])
-  | _ -> []
+
+        mk_entry entry_name Toplevel Location.none path
+          (attribute.attr_name.txt = "ocaml.text")
+      with _ -> None)
+  | _ -> None
 
 let to_entries ~path str =
-  toplevel ~path str @ List.concat_map (entries_of_struct_item ~path []) str
+  toplevel ~path str :: List.concat_map (entries_of_struct_item ~path []) str
+  |> List.filter_map (fun x -> x)

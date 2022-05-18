@@ -1,6 +1,6 @@
 Markdown without clickable links
   $ ometrics check-clone https://gitlab.com/vch9/ometrics-test.git --branch src-and-test --hash f9b705455789adea9258379e8e3113a61eda0ec8 --markdown
-  <details><summary markdown="span">⚠ There are changes which are not documented:</summary>
+  <details><summary markdown="span">⚠ There are code quality issues:</summary>
   
     * <details><summary markdown="span">tezt/foo.ml</summary>
   
@@ -18,7 +18,7 @@ Markdown without clickable links
 
 Markdown with clickables links
   $ ometrics check-clone https://gitlab.com/vch9/ometrics-test.git --branch src-and-test --hash f9b705455789adea9258379e8e3113a61eda0ec8 --clickable --markdown
-  <details><summary markdown="span">⚠ There are changes which are not documented:</summary>
+  <details><summary markdown="span">⚠ There are code quality issues:</summary>
   
     * <details><summary markdown="span">tezt/foo.ml</summary>
   
@@ -41,7 +41,7 @@ HTML
   <title>4e083e743d9a4500958635867779fa9bcacbacda</title>
   </head>
   <body>
-    <h2>Undocumented entries introduced since 4e083e743d9a4500958635867779fa9bcacbacda</h2>
+    <h2>Code quality issues introduced since 4e083e743d9a4500958635867779fa9bcacbacda</h2>
   <h3>tezt/foo.ml</h3>
   <ol>
     <li>Value: tezt</li>

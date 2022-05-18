@@ -1,9 +1,27 @@
+open Analysis
+
+let description = "is not documented"
 let fully_qualified_name ns ident = String.concat "." @@ List.rev (ident :: ns)
 
 let is_attribute_doc attribute =
   let open Ppxlib in
   let attr_name = attribute.attr_name.txt in
   attr_name = "ocaml.doc"
+
+let line loc = loc.Warnings.loc_start.Lexing.pos_lnum
+
+let mk_entry entry_name entry_kind loc entry_file is_documented =
+  if not is_documented then
+    Some
+      Entry.
+        {
+          entry_name;
+          entry_kind;
+          entry_line = line loc;
+          entry_file;
+          entry_description = description;
+        }
+  else None
 
 let is_documented attributes = List.exists is_attribute_doc attributes
 
@@ -26,17 +44,11 @@ let rec pattern_idents pat : string list =
       List.append (pattern_idents pat1) (pattern_idents pat2)
   | _ -> []
 
-let line loc = loc.Warnings.loc_start.Lexing.pos_lnum
-
-let entries_of_type_declaration ~path ns decl : Entry.t list =
+let entries_of_type_declaration ~path ns decl : Entry.t option list =
   let open Ppxlib in
-  let entry_documented = is_documented decl.ptype_attributes in
   [
-    {
-      entry_name = fully_qualified_name ns decl.ptype_name.txt;
-      entry_kind = Type;
-      entry_documented;
-      entry_line = line decl.ptype_loc;
-      entry_file = path;
-    };
+    mk_entry
+      (fully_qualified_name ns decl.ptype_name.txt)
+      Type decl.ptype_loc path
+      (is_documented decl.ptype_attributes);
   ]

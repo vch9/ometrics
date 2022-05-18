@@ -1,5 +1,5 @@
 (library
  (name ometrics)
- (libraries unix str digestif ppxlib)
+ (libraries unix str digestif ppxlib analysis documentation)
  (instrumentation
   (backend bisect_ppx)))
