@@ -26,8 +26,6 @@ build:
     - opam install depext --yes
     - sudo apt-get update
     - opam install . --dry-run --deps-only --locked --with-test --with-doc --yes | awk '/-> installed/{print $3}' | xargs opam depext -iy
-    # This is dirty but I want to keep the same .opam that is published on opam-repo
-    - opam install cmdliner.1.0.4 --yes
     - eval $(opam env)
     - make build
 

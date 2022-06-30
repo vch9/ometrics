@@ -53,18 +53,19 @@ module Check = struct
     Arg.(value & flag & info [ "c"; "clickable" ] ~doc ~docv:"CLICKABLE")
 
   let check_open =
-    let exits = Term.default_exits in
     let path =
       let doc = "Git project path." in
       Arg.(value & opt string "." & info [ "p"; "path" ] ~doc ~docv:"PATH")
     in
-    ( Term.(
+    let term =
+      Term.(
         const check $ path $ commit $ exclude_files $ exclude_file_re
-        $ exclude_entry_re $ output $ markdown $ html $ gitlab),
-      Term.info "check" ~version ~doc ~exits )
+        $ exclude_entry_re $ output $ markdown $ html $ gitlab)
+    in
+    let info = Cmd.info "check" ~version ~doc ~exits:Cmd.Exit.defaults in
+    Cmd.v info term
 
   let check_clone =
-    let exits = Term.default_exits in
     let git =
       let doc = "Git project." in
       Arg.(required & pos 0 (some string) None & info [] ~doc ~docv:"GIT")
@@ -73,18 +74,22 @@ module Check = struct
       let doc = "Git project branch." in
       Arg.(value & opt string "" & info [ "b"; "branch" ] ~doc ~docv:"BRANCH")
     in
-    ( Term.(
+    let term =
+      Term.(
         const check_clone $ git $ branch $ commit $ exclude_files
         $ exclude_file_re $ exclude_entry_re $ output $ clickable $ markdown
-        $ html $ gitlab $ title),
-      Term.info "check-clone" ~version ~doc ~exits )
+        $ html $ gitlab $ title)
+    in
+    let info = Cmd.info "check-clone" ~version ~doc ~exits:Cmd.Exit.defaults in
+    Cmd.v info term
 
   let cmds = [ check_open; check_clone ]
 end
 
-let default =
-  let exits = Term.default_exits in
-  (Term.(ret (const (`Help (`Pager, None)))), Term.info name ~version ~exits)
+let cmds =
+  let help = Term.(ret (const (`Help (`Pager, None)))) in
+  let info = Cmd.info "help" in
 
-let cmds = Check.cmds
-let () = Term.(exit @@ eval_choice default cmds)
+  Cmd.group ~default:help info Check.cmds
+
+let () = Stdlib.exit @@ Cmd.eval cmds
